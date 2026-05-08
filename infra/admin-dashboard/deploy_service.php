@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // API Call
-    $url = "http://api:8000/deploy/" . urlencode($empresa) . "/" . urlencode($servicio);
+    $url = "http://infra_api:8000/deploy/" . urlencode($empresa) . "/" . urlencode($servicio);
     $token = getenv('API_TOKEN') ?: "d7f3e8b1a9c4d2e5f6a7b8c9d0e1f2a3"; 
     
     $ch = curl_init($url);
@@ -35,27 +35,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     curl_close($ch);
     
     $data = json_decode($response, true);
-    
-    echo "<!DOCTYPE html><html><head><title>Estado de Despliegue</title>";
-    echo "<style>body{font-family:sans-serif; padding:50px; background:#f8fafc; color:#333;} .card{background:white; padding:30px; border-radius:15px; box-shadow:0 4px 6px rgba(0,0,0,0.1); max-width:800px; margin:auto;} .success{color:#166534; background:#dcfce7; padding:15px; border-radius:10px;} .error{color:#991b1b; background:#fee2e2; padding:15px; border-radius:10px;} pre{background:#1e293b; color:#f8fafc; padding:15px; border-radius:8px; overflow-x:auto; font-size:12px;}</style></head><body>";
-    echo "<div class='card'>";
-    
-    if ($http_code == 200 && isset($data['status']) && $data['status'] == 'success') {
-        echo "<h2 class='success'>✅ Despliegue completado con éxito</h2>";
-        echo "<p>El servicio <strong>$servicio</strong> para la empresa <strong>$empresa</strong> ya está operativo.</p>";
-    } else {
-        echo "<h2 class='error'>❌ Error en el despliegue</h2>";
-        if (isset($data['stderr']) && !empty($data['stderr'])) {
-            echo "<p>Detalles del error:</p>";
-            echo "<pre>" . htmlspecialchars($data['stderr']) . "</pre>";
-        } elseif (isset($data['detail'])) {
-            echo "<p>Error de la API: " . htmlspecialchars($data['detail']) . "</p>";
+
+    // Si es una petición AJAX (XMLHttpRequest), devolver JSON
+    if (!empty($_SERVER['HTTP_X_REQUEST_WITH']) && strtolower($_SERVER['HTTP_X_REQUEST_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        if ($http_code == 200 && isset($data['status']) && $data['status'] == 'success') {
+            echo json_encode(['status' => 'success', 'message' => 'Despliegue completado', 'stdout' => $data['stdout']]);
         } else {
-            echo "<p>Código de respuesta: $http_code</p>";
+            echo json_encode(['status' => 'error', 'message' => $data['stderr'] ?? $data['detail'] ?? 'Error desconocido']);
         }
+        exit;
     }
-    
-    echo "<br><a href='index.php' style='display:inline-block; padding:10px 20px; background:#4f46e5; color:white; text-decoration:none; border-radius:8px;'>Volver al Dashboard</a>";
-    echo "</div></body></html>";
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Despliegue - TenSaaS</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = { darkMode: 'class' }
+            if (localStorage.theme === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+                document.documentElement.classList.add('light')
+            } else {
+                document.documentElement.classList.remove('light')
+            }
+        </script>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.3s ease; }
+            .light body { background-color: #f1f5f9; color: #0f172a; }
+            .dark body { background-color: #0b0f1a; color: #f8fafc; }
+            .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
+            .light .glass { background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(0, 0, 0, 0.05); }
+        </style>
+    </head>
+    <body class="flex items-center justify-center min-h-screen p-6">
+        <div class="w-full max-w-2xl glass rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+            <div class="mb-10 text-center">
+                <div class="inline-flex p-5 rounded-2xl bg-indigo-500/10 text-indigo-400 mb-6 shadow-xl shadow-indigo-500/10">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h1 class="text-4xl font-black tracking-tight mb-2">Estado del Despliegue</h1>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-widest opacity-60">Operación en curso para <?php echo htmlspecialchars($empresa); ?></p>
+            </div>
+
+            <?php if ($http_code == 200 && isset($data['status']) && $data['status'] == 'success'): ?>
+                <div class="bg-green-500/10 border border-green-500/20 p-6 rounded-2xl mb-6">
+                    <div class="flex items-center text-green-400 mb-2">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="font-bold text-lg">Despliegue completado</span>
+                    </div>
+                    <p class="text-green-300/80 text-sm">El contenedor se ha iniciado correctamente y ya es accesible desde el panel corporativo.</p>
+                </div>
+                <div class="bg-black/20 rounded-xl p-4 mb-8">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Salida del Sistema:</p>
+                    <pre class="text-[10px] text-slate-300 overflow-x-auto"><?php echo htmlspecialchars($data['stdout'] ?? 'Sin salida disponible.'); ?></pre>
+                </div>
+            <?php else: ?>
+                <div class="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl mb-6">
+                    <div class="flex items-center text-red-400 mb-2">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span class="font-bold text-lg">Error en el proceso</span>
+                    </div>
+                    <p class="text-red-300/80 text-sm">No se ha podido completar el despliegue. Por favor, revisa la salida de error a continuación.</p>
+                </div>
+                <div class="bg-black/20 rounded-xl p-4 mb-8">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-2">Detalles del Error:</p>
+                    <pre class="text-[10px] text-red-300/80 overflow-x-auto"><?php echo htmlspecialchars($data['stderr'] ?? $data['detail'] ?? 'Error desconocido.'); ?></pre>
+                </div>
+            <?php endif; ?>
+
+            <a href="index.php" class="block w-full text-center py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all transform hover:-translate-y-1">
+                Volver al Dashboard
+            </a>
+        </div>
+    </body>
+    </html>
+    <?php
 }
 ?>

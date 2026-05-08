@@ -45,7 +45,7 @@ if command -v jq >/dev/null 2>&1; then
     jq -r 'to_entries | .[] | "\(.key): \(.value)"' "$CRED_FILE" | while read -r line; do
         key=$(echo "$line" | cut -d: -f1)
         val=$(echo "$line" | cut -d: -f2-)
-        printf "%-20 : %s\n" "$key" "$val"
+        printf "%-20s : %s\n" "$key" "$val"
     done
 else
     # Fallback si no hay jq (aunque deploy.sh lo requiere)

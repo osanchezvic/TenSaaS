@@ -6,21 +6,22 @@ route:
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 1h
-  receiver: 'telegram'
+  receiver: 'null'
 
 receivers:
-- name: 'telegram'
-  telegram_configs:
-  - bot_token: 'TU_BOT_TOKEN_AQUI'
-    chat_id: TU_CHAT_ID_AQUI
-    send_resolved: true
-    parse_mode: 'HTML'
-    message: |
-      <b>🔔 Alerta del Sistema SaaS</b>
-      <b>Estado:</b> {{ .Status | ToUpper }}
-      {{ range .Alerts }}
-      <b>Alerta:</b> {{ .Labels.alertname }}
-      <b>Severidad:</b> {{ .Labels.severity }}
-      <b>Descripción:</b> {{ .Annotations.description }}
-      <b>Iniciado:</b> {{ .StartsAt.Format "15:04:05" }}
-      {{ end }}
+- name: 'null'
+# - name: 'telegram'
+#   telegram_configs:
+#   - bot_token: 'TU_BOT_TOKEN_AQUI'
+#     chat_id: TU_CHAT_ID_AQUI
+#     send_resolved: true
+#     parse_mode: 'HTML'
+#     message: |
+#       <b>🔔 Alerta del Sistema SaaS</b>
+#       <b>Estado:</b> {{ .Status | ToUpper }}
+#       {{ range .Alerts }}
+#       <b>Alerta:</b> {{ .Labels.alertname }}
+#       <b>Severidad:</b> {{ .Labels.severity }}
+#       <b>Descripción:</b> {{ .Annotations.description }}
+#       <b>Iniciado:</b> {{ .StartsAt.Format "15:04:05" }}
+#       {{ end }}

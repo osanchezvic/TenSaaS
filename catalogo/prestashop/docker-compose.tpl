@@ -1,6 +1,6 @@
 services:
   {{EMPRESA}}_prestashop:
-    image: prestashop/prestashop:8.1
+    image: prestashop/prestashop:latest
     container_name: {{EMPRESA}}_prestashop
     restart: always
     environment:

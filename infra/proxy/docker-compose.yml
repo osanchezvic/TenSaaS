@@ -10,7 +10,7 @@ services:
       - '443:443'
       - '81:81'
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:81"]
+      test: ["CMD", "curl", "-f", "http://localhost:81"]
       interval: 30s
       timeout: 10s
       retries: 5

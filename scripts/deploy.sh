@@ -263,6 +263,22 @@ if ! docker compose up -d 2>&1 | tee -a "$LOG_FILE"; then
 fi
 
 # =====================================================
+# AUTOMATIZACIÓN NPM
+# =====================================================
+
+source "$SCRIPT_PATH/funciones/npm.sh"
+
+log_info "Configurando Proxy NPM..."
+TOKEN=$(npm_get_token)
+SUBDOMAIN="${SERVICIO}.${EMPRESA}.tensaas.es"
+
+if npm_add_proxy "$SUBDOMAIN" "${EMPRESA}_${SERVICIO}-1" "$PUERTO" "$NPM_CERT_ID" "$TOKEN"; then
+    log_success "Proxy configurado: https://$SUBDOMAIN"
+else
+    log_error "Fallo al configurar proxy en NPM"
+fi
+
+# =====================================================
 # VALIDACIONES POST-DEPLOY
 # =====================================================
 

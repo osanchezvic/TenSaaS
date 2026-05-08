@@ -5,6 +5,7 @@ backups/
 *.zip
 *.sql
 *.log
+*.bak
 
 # === BASES DE DATOS (Persistencia) ===
 # Ignora directorios de datos de MySQL/MariaDB en cualquier nivel
@@ -18,6 +19,9 @@ aria_log.*
 **/sys/
 # Archivos de configuración de salud/credenciales temporales
 .my-healthcheck.cnf
+*.sqlite3
+*.db
+*.db-journal
 
 # === SEGURIDAD Y CERTIFICADOS ===
 # Ignora certificados de Let'sEncrypt y claves privadas
@@ -26,12 +30,47 @@ aria_log.*
 *.key
 *.crt
 
+# Carpeta de credenciales de los scripts
+scripts/databases/credentials/*
+!scripts/databases/credentials/.gitkeep
+
 # === CONFIGURACIÓN SENSIBLE (Secretos) ===
 # No subas nunca tus contraseñas reales
 .env
+.env.*
+!.env.example
+scripts/config.env
 infra/authelia/config/notification.txt
+infra/authelia/config/users.yml
 
-# === DOCKER & SISTEMA ===
-# Ignora volúmenes genéricos si decides usarlos
-**/volumes/
+# === LENGUAJES Y ENTORNOS ===
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env/
+build/
+dist/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === IDE Y SISTEMA ===
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+**/volumes/
+
+# === LOGS DEL PROYECTO ===
+scripts/logs/*
+!scripts/logs/.gitkeep

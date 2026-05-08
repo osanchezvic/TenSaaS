@@ -14,22 +14,22 @@ db_register_empresa() {
         echo "$empresa" >> "$DB_DIR/empresas.txt"
     fi
 
-    # Determinar host de BD
-    local db_host="localhost"
-    local db_port="3307"
+    # Determinar método de acceso a BD
     if [ -f /.dockerenv ]; then
-        db_host="infra_users_db"
-        db_port="3306"
+        # Estamos dentro de un contenedor
+        mysql -h infra_users_db -u users_user -pusers_pass users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || true
+    else
+        # Estamos en el host, intentamos docker exec primero (más fiable)
+        if docker ps | grep -q infra_users_db; then
+            docker exec infra_users_db mysql -u users_user -pusers_pass users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || \
+            mysql -h localhost -P 3307 -u users_user -pusers_pass users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || true
+        else
+            mysql -h localhost -P 3307 -u users_user -pusers_pass users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || true
+        fi
     fi
-
-    # Registrar en MariaDB infra si está disponible
-    mysql -h "$db_host" -P "$db_port" -u users_user -pusers_pass users_db -e "
-        INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');
-    " 2>/dev/null || true
 }
 
 # Registrar servicio
-# Formato: empresa:servicio:puerto:status
 db_register_servicio() {
     local empresa="$1"
     local servicio="$2"
@@ -41,24 +41,21 @@ db_register_servicio() {
         echo "$empresa:$servicio:$puerto:running" >> "$DB_DIR/servicios.txt"
     fi
 
-    # Determinar host de BD
-    local db_host="localhost"
-    local db_port="3307"
-    if [ -f /.dockerenv ]; then
-        db_host="infra_users_db"
-        db_port="3306"
-    fi
+    local sql_query="
+        INSERT INTO servicios_contratados (empresa_id, nombre_servicio, puerto, tipo, estado) 
+        VALUES ((SELECT id FROM empresas WHERE nombre='$empresa'), '$servicio', $puerto, 'saas', 'activo')
+        ON DUPLICATE KEY UPDATE puerto=$puerto, estado='activo';
+    "
 
-    # Registrar en MariaDB infra si está disponible
-    # Primero obtener ID de empresa
-    local emp_id=$(mysql -h "$db_host" -P "$db_port" -u users_user -pusers_pass users_db -N -s -e "SELECT id FROM empresas WHERE nombre='$empresa';" 2>/dev/null || echo "")
-    
-    if [ -n "$emp_id" ]; then
-        mysql -h "$db_host" -P "$db_port" -u users_user -pusers_pass users_db -e "
-            INSERT INTO servicios_contratados (empresa_id, nombre_servicio, puerto, tipo, estado) 
-            VALUES ($emp_id, '$servicio', $puerto, 'saas', 'activo')
-            ON DUPLICATE KEY UPDATE puerto=$puerto, estado='activo';
-        " 2>/dev/null || true
+    if [ -f /.dockerenv ]; then
+        mysql -h infra_users_db -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || true
+    else
+        if docker ps | grep -q infra_users_db; then
+            docker exec infra_users_db mysql -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || \
+            mysql -h localhost -P 3307 -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || true
+        else
+            mysql -h localhost -P 3307 -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || true
+        fi
     fi
 }
 
@@ -103,21 +100,22 @@ crear_usuario_admin() {
         hash_pass=$(echo -n "$admin_pass" | openssl dgst -md5 | cut -d' ' -f2)
     fi
     
-    # Determinar host de BD
-    local db_host="localhost"
-    local db_port="3307"
-    if [ -f /.dockerenv ]; then
-        db_host="infra_users_db"
-        db_port="3306"
-    fi
-
-    # Insertar en BD infra_users_db
-    # Mapeamos 'admin' a es_admin=1 si es necesario, o lo dejamos para la lógica del dashboard
-    mysql -h "$db_host" -P "$db_port" -u users_user -pusers_pass users_db -e "
+    local sql_query="
         INSERT INTO usuarios (empresa_id, empresa, usuario, hash_password, rol, es_admin) 
         VALUES ((SELECT id FROM empresas WHERE nombre='$empresa'), '$empresa', '$admin_user', '$hash_pass', 'admin', 0) 
         ON DUPLICATE KEY UPDATE hash_password='$hash_pass';
-    " 2>/dev/null || log_warn "No se pudo insertar usuario admin en BD infra (BD no disponible?)"
+    "
+
+    if [ -f /.dockerenv ]; then
+        mysql -h infra_users_db -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || true
+    else
+        if docker ps | grep -q infra_users_db; then
+            docker exec infra_users_db mysql -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || \
+            mysql -h localhost -P 3307 -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || true
+        else
+            mysql -h localhost -P 3307 -u users_user -pusers_pass users_db -e "$sql_query" 2>/dev/null || true
+        fi
+    fi
 }
 
 # Exportar funciones

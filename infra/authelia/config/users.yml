@@ -1,8 +1,0 @@
-users:
-  admin:
-    displayname: "Administrador"
-    password: "$argon2id$v=19$m=65536,t=3,p=4$6i9N+UuJ8xT5LzR1K9wQ7A$Z8X9v6fN/fJj7z4G5LwX8A7yQyS7H9f0uG5G5G5G5G5" # Contraseña actualizada
-    email: admin@osanchez.org
-    groups:
-      - admins
-      - users

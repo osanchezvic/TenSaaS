@@ -1,15 +1,26 @@
 version: '3.8'
 
 services:
+  # --- CONECTOR CLOUDFLARE (EL TÚNEL) ---
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared_tunnel
+    restart: unless-stopped
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+    networks:
+      - infra_net
+
   portainer:
     image: portainer/portainer-ce:2.19.4
     container_name: portainer_global
     restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9443:9443"
+    # PUERTOS CERRADOS: Acceso vía portainer.tensaas.es
+    expose:
+      - "9000"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -24,10 +35,11 @@ services:
     image: prom/node-exporter:v1.6.1
     container_name: node_exporter_global
     restart: unless-stopped
-    ports:
-      - "9100:9100"
+    # Puerto interno para Prometheus
+    expose:
+      - "9100"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/metrics"]
+      test: ["CMD", "curl", "-f", "http://localhost:9100/metrics"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -48,10 +60,11 @@ services:
     image: prom/prometheus:v2.47.2
     container_name: prometheus_global
     restart: unless-stopped
-    ports:
-      - "9090:9090"
+    # PUERTOS CERRADOS: Acceso vía prometheus.tensaas.es
+    expose:
+      - "9090"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/ready"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -73,10 +86,11 @@ services:
     image: grafana/grafana:10.2.2
     container_name: grafana_global
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # PUERTOS CERRADOS: Acceso vía grafana.tensaas.es
+    expose:
+      - "3000"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/login"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/login"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -85,8 +99,6 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
-
-
     volumes:
       - grafana_data:/var/lib/grafana
       - grafana_config:/etc/grafana
@@ -96,15 +108,15 @@ services:
       - infra_net
 
   nginx-proxy-manager:
-    image: "jc21/nginx-proxy-manager:2.11.2"
+    image: "jc21/nginx-proxy-manager:latest"
     container_name: nginx_proxy_manager
     restart: unless-stopped
     ports:
       - '80:80'
       - '443:443'
-      - '81:81'
+      - '81:81' # Panel de administración NPM
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:81"]
+      test: ["CMD", "curl", "-f", "http://localhost:81"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -164,42 +176,35 @@ services:
     environment:
       - API_TOKEN=${API_TOKEN:-supersecrettoken}
       - PROJECT_ROOT=/app
-      - HOST_PROJECT_ROOT=/home/oscar/SaaS-multiempresa-ASIR
-    ports:
-      - "8001:8000"
+      - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT}
+    # PUERTO CERRADO: Comunicación interna con Dashboard vía infra_net:8000
 
   admin-dashboard:
     build: ./admin-dashboard
     container_name: infra_admin_dashboard
     restart: unless-stopped
-    ports:
-      - "8000:80"
+    # PUERTO CERRADO: Acceso vía panel.tensaas.es
+    expose:
+      - "80"
     environment:
       - DB_HOST=infra_users_db
       - DB_NAME=users_db
       - DB_USER=users_user
       - DB_PASSWORD=users_pass
       - API_TOKEN=${API_TOKEN:-d7f3e8b1a9c4d2e5f6a7b8c9d0e1f2a3}
-    networks:
-      - infra_net
-
-  alertmanager:
-    image: prom/alertmanager:v0.26.0
-    container_name: alertmanager_global
-    restart: unless-stopped
     volumes:
-      - ./monitorizacion/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./admin-dashboard:/var/www/html
+      - ../catalogo:/var/www/catalogo
     networks:
       - infra_net
-    ports:
-      - "9093:9093"
 
   dashy:
     image: lissy93/dashy:latest
     container_name: dashy_portal
     restart: unless-stopped
-    ports:
-      - "4000:8080"
+    # PUERTO CERRADO: Acceso vía portal.tensaas.es
+    expose:
+      - "8080"
     volumes:
       - ./dashy/conf.yml:/app/public/conf.yml
     networks:
@@ -220,15 +225,16 @@ services:
       - infra_net
 
   watchtower:
-    image: containrrr/watchtower:1.6.0
+    image: containrrr/watchtower:latest
     container_name: watchtower_global
     restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.40
     healthcheck:
-      test: ["CMD", "sh", "-c", "ps aux | grep -q watchtower || exit 1"]
+      test: ["CMD", "/watchtower", "--version"]
       interval: 1m
-      timeout: 15s
+      timeout: 10s
       retries: 3
-      start_period: 60s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:

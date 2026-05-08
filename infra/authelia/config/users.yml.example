@@ -1,0 +1,8 @@
+users:
+  Admin:
+    displayname: "Administrador"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$bCGaodfkjK3vwbWCfZ7HHA$rH2xXDYRz3Esb5h5lVErk9dLhMUK0pS6oHPJuo9FR/s"
+    email: osanchezvic@gmail.com
+    groups:
+      - admins
+      - users

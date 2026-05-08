@@ -47,7 +47,7 @@ if [ "$FORMATO" = "table" ] || [ "$FORMATO" = "" ]; then
     while IFS=: read -r empresa servicio puerto status; do
         if [ -z "$FILTRO_EMPRESA" ] || [ "$FILTRO_EMPRESA" = "$empresa" ]; then
             estado=$(get_estado "$empresa" "$servicio")
-            printf "%-11 %-18 %-9 %s\n" "$empresa" "$servicio" "$puerto" "$estado"
+            printf "%-11s %-18s %-9s %s\n" "$empresa" "$servicio" "$puerto" "$estado"
         fi
     done < "$DB_DIR/servicios.txt"
 

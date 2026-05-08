@@ -22,25 +22,25 @@ logpath = /var/log/auth.log
 maxretry = 3
 
 [nginx-http-auth]
-enabled = true
+enabled = false
 port = http,https
 filter = nginx-http-auth
 logpath = /var/log/nginx/error.log
 
 [nginx-noscript]
-enabled = true
+enabled = false
 port = http,https
 filter = nginx-noscript
 logpath = /var/log/nginx/access.log
 
 [nginx-badbots]
-enabled = true
+enabled = false
 port = http,https
 filter = nginx-badbots
 logpath = /var/log/nginx/access.log
 
 [nginx-noproxy]
-enabled = true
+enabled = false
 port = http,https
 filter = nginx-noproxy
 logpath = /var/log/nginx/access.log

@@ -12,7 +12,7 @@ El sistema ha sido diseñado bajo principios de **Security by Design** y **Obser
   - **Seguridad Web:** Protección contra ataques CSRF mediante tokens de sesión validados en cada acción crítica.
 - **Gestión de Infraestructura (IaC):**
   - **API-driven:** Orquestación mediante una API segura (FastAPI) que actúa como puente entre la UI y los scripts de sistema.
-  - **Hardening:** Permisos restrictivos en archivos de configuración (600), rotación de secretos y eliminación de credenciales por defecto.
+  - **Zero-Hardcoded Secrets:** Eliminación de credenciales por defecto en el código. Uso obligatorio de variables de entorno para tokens de API y contraseñas.
 - **Monitorización Proactiva:**
   - **Alertmanager:** Sistema de alertas crítico integrado con **Telegram** para notificaciones en tiempo real.
   - **Stack de Métricas:** Prometheus y Grafana para el control exhaustivo de recursos.
@@ -23,9 +23,12 @@ El sistema ha sido diseñado bajo principios de **Security by Design** y **Obser
 /
 ├── catalogo/        # Plantillas (.tpl) de servicios listos para SaaS
 ├── infra/           # Servicios globales (Proxy, API, Monitorización, Dashboards)
+│   ├── api/         # Backend de automatización (FastAPI)
+│   ├── admin-dashboard/ # Panel de administración visual (PHP/JS)
+│   └── monitorizacion/ # Stack Prometheus, Grafana y Alertmanager
 ├── scripts/         # Motor de orquestación en Bash
-│   ├── funciones/   # Módulos de lógica (DB, Puertos, Seguridad)
-│   └── deploy.sh    # Script inteligente de despliegue con validación de dependencias
+│   ├── funciones/   # Módulos de lógica (DB, Puertos, Seguridad, NPM)
+│   └── deploy.sh    # Script inteligente de despliegue con gestión de dependencias
 ├── data/            # Almacenamiento persistente aislado por empresa
 ├── docs/            # Diagramas de arquitectura y guías técnicas
 └── README.md        # Documentación principal
@@ -34,34 +37,49 @@ El sistema ha sido diseñado bajo principios de **Security by Design** y **Obser
 ## ✨ Características del "10" (Valor Añadido)
 
 1. **Orquestador con Dependencias:** El sistema detecta automáticamente si un servicio (ej. WordPress) requiere otro (ej. MariaDB) y lo despliega de forma autónoma.
-2. **Dashboard Admin Moderno:** Interfaz profesional rediseñada con Glassmorphism para la gestión visual de despliegues y estadísticas.
+2. **Dashboard Admin Moderno:** Interfaz profesional rediseñada con **Glassmorphism** y actualización en tiempo real mediante Fetch API para la gestión de despliegues.
 3. **Portal Dashy:** Punto de entrada visual que monitoriza la salud de los servicios en tiempo real con indicadores de estado.
 4. **Sistema de Alertas:** Notificaciones automáticas al móvil si un contenedor cae o si hay un consumo excesivo de CPU/RAM.
 5. **Backups Garantizados:** Script de respaldo mejorado que asegura la integridad total de los volúmenes antes de cualquier cambio.
 
-## 🖥️ Acceso a la Plataforma (Localhost)
+## 🚀 Guía de Instalación Rápida
+
+1. **Configurar el entorno:**
+   ```bash
+   # Copiar las plantillas de configuración
+   cp scripts/config.env.example scripts/config.env
+   cp infra/authelia/config/users.yml.example infra/authelia/config/users.yml
+   ```
+2. **Editar credenciales:** Modifica `scripts/config.env` y el `.env` de la infraestructura con tus tokens y contraseñas.
+3. **Levantar la infraestructura base:**
+   ```bash
+   cd infra && docker compose up -d
+   ```
+
+## 🖥️ Acceso a la Plataforma (Default)
 
 | Servicio | URL | Descripción |
 | :--- | :--- | :--- |
 | **Admin Dashboard** | `http://localhost:8000` | Gestión de despliegues y empresas. |
-| **Portal Global** | `http://localhost:4000` | Estado visual de toda la infraestructura. |
-| **Monitorización** | `http://localhost:3000` | Métricas avanzadas en Grafana. |
-| **API Control** | `http://localhost:8001` | Backend de automatización. |
+| **Portal Global** | `http://localhost:4000` | Estado visual de toda la infraestructura (Dashy). |
+| **Monitorización** | `http://localhost:3000` | Métricas avanzadas en Grafana (Admin:admin). |
+| **API Control** | `http://localhost:8001` | Backend de automatización (Documentación en `/docs`). |
 
-## 🛠️ Comandos Rápidos
+## 🛠️ Comandos de Gestión
 
 ```bash
-# Desplegar un servicio para una empresa (CLI)
+# Desplegar un servicio para una empresa (ej: panaderia wordpress)
 ./scripts/deploy.sh <empresa> <servicio>
 
-# Destruir con backup automático
+# Destruir un servicio con backup automático
 ./scripts/destroy.sh <empresa> <servicio>
 
-# Levantar infraestructura base
-cd infra && docker compose up -d
+# Listar servicios activos
+./scripts/list.sh
 ```
 
 ## 🔒 Seguridad Aplicada
-- **RBAC:** Control de acceso mediante `users_db` (MariaDB) con hashes Bcrypt.
-- **Authelia:** Autenticación centralizada y portal de seguridad.
-- **Fail2ban:** Protección contra ataques de fuerza bruta en los servicios expuestos.
+- **RBAC:** Control de acceso mediante base de datos MariaDB con hashes Bcrypt.
+- **Authelia:** Autenticación centralizada de doble factor (2FA).
+- **Fail2ban:** Protección contra ataques de fuerza bruta integrando logs de Nginx.
+- **Secrets Management:** Los archivos sensibles están excluidos de Git mediante un `.gitignore` estricto y el uso de archivos `.example`.

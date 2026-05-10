@@ -13,6 +13,16 @@ if (!$conn) {
 }
 mysqli_set_charset($conn, "utf8mb4");
 
+// --- AUTO-MIGRATION: Asegurar que el estado 'eliminado' existe ---
+$check_sql = "SHOW COLUMNS FROM servicios_contratados LIKE 'estado'";
+$res = mysqli_query($conn, $check_sql);
+if ($res && $row = mysqli_fetch_assoc($res)) {
+    if (!strpos($row['Type'], "'eliminado'")) {
+        $alter_sql = "ALTER TABLE servicios_contratados MODIFY COLUMN estado ENUM('activo', 'inactivo', 'eliminado') DEFAULT 'activo'";
+        mysqli_query($conn, $alter_sql);
+    }
+}
+
 $DB_DIR = "/var/www/scripts/databases";
 
 // --- API ACTIONS ---

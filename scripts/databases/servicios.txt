@@ -4,7 +4,6 @@ panaderia:wordpress:8102:running
 panaderia:zabbix:8104:running
 panaderia:phpmyadmin:8103:running
 panaderia:redis:8105:running
-panaderia:nextcloud:8106:running
 panaderia:jitsi:8107:running
 martincodax:mariadb:8108:running
 martincodax:prestashop:8109:running

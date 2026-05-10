@@ -104,7 +104,8 @@ async def destroy(company: str, service: str, token: str = Header(...)):
         result = subprocess.run(
             [destroy_script, company, service], 
             capture_output=True, 
-            text=True
+            text=True,
+            env={**os.environ, "FORCE_MODE": "1"}
         )
         
         if result.returncode != 0:

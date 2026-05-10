@@ -13,6 +13,8 @@ if (!$conn) {
 }
 mysqli_set_charset($conn, "utf8mb4");
 
+$DB_DIR = "/var/www/scripts/databases";
+
 // --- API ACTIONS ---
 if (isset($_GET['action'])) {
     header('Content-Type: application/json');
@@ -37,17 +39,34 @@ if (isset($_GET['action'])) {
     if ($_GET['action'] === 'get_real_status') {
         $api_url = "http://infra_api:8000/api/v1/system/status";
         $token = getenv('API_TOKEN') ?: "d7f3e8b1a9c4d2e5f6a7b8c9d0e1f2a3";
+
         $ch = curl_init($api_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['token: ' . $token]);
+
+        // ✅ FIX: Añadir timeouts para evitar que PHP cuelgue
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);  // Máx 3s para conectar
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);          // Máx 8s para respuesta total
+
         $response = curl_exec($ch);
+        $curl_error = curl_error($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        if (!$response) {
-            error_log("Dashboard API Error: " . curl_error($ch));
+
+        header('Content-Type: application/json');
+
+        if ($response === false || empty($response)) {
+            // La API no respondió — devolver JSON de error en lugar de vacío
+            // El JS sabrá interpretarlo y marcará los servicios como "Unreachable"
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'infra_api no disponible',
+                'curl_error' => $curl_error,
+                'http_code' => $http_code
+            ]);
         } else {
-            // error_log("Dashboard API Response: " . substr($response, 0, 100) . "...");
+            echo $response;
         }
-        echo $response ?: json_encode(['status' => 'error', 'message' => 'API Unreachable']);
         exit;
     }
 
@@ -72,12 +91,24 @@ if (isset($_GET['action'])) {
 // Obtener catálogo disponible
 $catalogo_path = "/var/www/catalogo";
 $servicios_catalogo = [];
+// Obtener servicios ya contratados
+$contratados = [];
+if (file_exists("$DB_DIR/servicios.txt")) {
+    $lines = file("$DB_DIR/servicios.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $parts = explode(':', $line);
+        if (count($parts) >= 2) {
+            $contratados[] = $parts[1]; // nombre_servicio
+        }
+    }
+}
+
 if (is_dir($catalogo_path)) {
     $dirs = array_filter(glob($catalogo_path . '/*'), 'is_dir');
     foreach ($dirs as $dir) {
         $name = basename($dir);
-        // Excluir carpetas internas o de sistema
-        if (!in_array($name, ['panel', 'nginx', 'monitorizacion', 'mariadb', 'users-db', 'node-exporter', 'prometheus', 'grafana'])) {
+        // Excluir carpetas internas o de sistema y servicios ya contratados
+        if (!in_array($name, ['panel', 'nginx', 'monitorizacion', 'mariadb', 'users-db', 'node-exporter', 'prometheus', 'grafana']) && !in_array($name, $contratados)) {
             $servicios_catalogo[] = $name;
         }
     }

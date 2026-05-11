@@ -12,7 +12,8 @@ $usuario = htmlspecialchars($_SESSION['usuario']);
 $host = getenv('DB_HOST') ?: 'infra_users_db';
 $dbname = getenv('DB_NAME') ?: 'users_db';
 $user = getenv('DB_USER') ?: 'users_user';
-$pass = getenv('DB_PASSWORD') ?: 'users_pass';
+$pass = getenv('DB_PASSWORD');
+if (!$pass) die("Config Error: DB_PASSWORD not set");
 
 $conn = mysqli_connect($host, $user, $pass, $dbname);
 if (!$conn) {

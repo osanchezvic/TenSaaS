@@ -1,0 +1,7 @@
+nombre: mariadb
+descripcion: Base de datos MariaDB para servicios dependientes.
+puerto_por_defecto: 3306
+icono: https://mariadb.org/wp-content/uploads/2019/11/mariadb-logo-vertical_blue.svg
+volumenes:
+  - mariadb
+dependencias: []

@@ -42,44 +42,36 @@ El sistema ha sido diseñado bajo principios de **Security by Design** y **Obser
 4. **Sistema de Alertas:** Notificaciones automáticas al móvil si un contenedor cae o si hay un consumo excesivo de CPU/RAM.
 5. **Backups Garantizados:** Script de respaldo mejorado que asegura la integridad total de los volúmenes antes de cualquier cambio.
 
-## 🚀 Guía de Instalación Rápida
+## 🚀 Instalación y Configuración Segura
 
-1. **Configurar el entorno:**
+Este proyecto utiliza variables de entorno para gestionar secretos. **Nunca** subas archivos `.env` reales a un repositorio público.
+
+### Pasos para el despliegue
+
+1. **Configurar Secretos:**
+   Copia las plantillas de configuración y rellena tus credenciales (Tokens de API, Passwords de DB, etc.):
    ```bash
-   # Copiar las plantillas de configuración
+   cp .env.example .env
+   cp .env infra/.env
    cp scripts/config.env.example scripts/config.env
-   cp infra/authelia/config/users.yml.example infra/authelia/config/users.yml
    ```
-2. **Editar credenciales:** Modifica `scripts/config.env` y el `.env` de la infraestructura con tus tokens y contraseñas.
-3. **Levantar la infraestructura base:**
+   *Edita `.env` con valores seguros antes de proceder.*
+
+2. **Levantar la Infraestructura Base:**
    ```bash
-   cd infra && docker compose up -d
+   cd infra
+   docker compose up -d
    ```
 
-## 🖥️ Acceso a la Plataforma (Default)
+3. **Acceso a los Paneles:**
+   - **Admin Dashboard:** `https://panel.tensaas.es` (Gestionado por Nginx Proxy Manager + Cloudflare)
+   - **Monitorización:** `https://grafana.tensaas.es`
+   - **Portal Dashy:** `https://portal.tensaas.es`
 
-| Servicio | URL | Descripción |
-| :--- | :--- | :--- |
-| **Admin Dashboard** | `http://localhost:8000` | Gestión de despliegues y empresas. |
-| **Portal Global** | `http://localhost:4000` | Estado visual de toda la infraestructura (Dashy). |
-| **Monitorización** | `http://localhost:3000` | Métricas avanzadas en Grafana (Admin:admin). |
-| **API Control** | `http://localhost:8001` | Backend de automatización (Documentación en `/docs`). |
+---
 
-## 🛠️ Comandos de Gestión
-
-```bash
-# Desplegar un servicio para una empresa (ej: panaderia wordpress)
-./scripts/deploy.sh <empresa> <servicio>
-
-# Destruir un servicio con backup automático
-./scripts/destroy.sh <empresa> <servicio>
-
-# Listar servicios activos
-./scripts/list.sh
-```
-
-## 🔒 Seguridad Aplicada
-- **RBAC:** Control de acceso mediante base de datos MariaDB con hashes Bcrypt.
-- **Authelia:** Autenticación centralizada de doble factor (2FA).
-- **Fail2ban:** Protección contra ataques de fuerza bruta integrando logs de Nginx.
-- **Secrets Management:** Los archivos sensibles están excluidos de Git mediante un `.gitignore` estricto y el uso de archivos `.example`.
+## 🔒 Seguridad Implementada
+- **Zero Secrets in Git:** Eliminación de credenciales hardcodeadas en favor de variables de entorno.
+- **Acceso Restringido:** Puertos administrativos (NPM) limitados a `127.0.0.1`.
+- **Validación de Entradas:** Saneamiento de parámetros en la API para prevenir inyección de comandos.
+- **Aislamiento Docker:** Redes independientes por cada inquilino (tenant).

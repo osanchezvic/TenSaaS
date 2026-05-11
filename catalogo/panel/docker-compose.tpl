@@ -8,7 +8,7 @@ services:
       - DB_PORT=3306
       - DB_NAME=users_db
       - DB_USER=users_user
-      - DB_PASSWORD=users_pass
+      - DB_PASSWORD={{DB_PASSWORD}}
     volumes:
       - {{RUTA_DATOS}}/panel:/var/www/html
     networks:

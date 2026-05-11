@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  users-db:
+    image: mariadb:10.11
+    container_name: infra_users_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-users_db}
+      MYSQL_USER: ${DB_USER:-users_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./users-db-v2:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - infra_net
+    ports:
+      - "3307:3306"  # Puerto interno para acceso
+
+networks:
+  infra_net:
+    external: true
+
+volumes:
+  users-db-data:

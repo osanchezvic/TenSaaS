@@ -1,77 +1,42 @@
-# === BACKUPS Y ARCHIVOS PESADOS ===
-# Ignora cualquier carpeta de backups y archivos comprimidos
-backups/
-*.tar.gz
-*.zip
-*.sql
-*.log
-*.bak
+# --- SEGURIDAD Y CONFIGURACIÓN ---
+# Archivo maestro de variables de entorno
+.env
+infra/.env
+scripts/config.env
 
-# === BASES DE DATOS (Persistencia) ===
-# Ignora directorios de datos de MySQL/MariaDB en cualquier nivel
-**/mysql/
-**/mariadb/
-**/data/
-**/users-db-data/
-**/users-db/
-!infra/users-db/init.sql
-aria_log.*
-**/performance_schema/
-**/sys/
-# Archivos de configuración de salud/credenciales temporales
-.my-healthcheck.cnf
-*.sqlite3
-*.db
-*.db-journal
-
-# === SEGURIDAD Y CERTIFICADOS ===
-# Ignora certificados de Let'sEncrypt y claves privadas
-**/letsencrypt/
-*.pem
-*.key
-*.crt
-
-# Carpeta de credenciales de los scripts
+# Credenciales generadas por los scripts
 scripts/databases/credentials/*
 !scripts/databases/credentials/.gitkeep
 
-# === CONFIGURACIÓN SENSIBLE (Secretos) ===
-# No subas nunca tus contraseñas reales
-.env
-.env.*
-!.env.example
-scripts/config.env
+# Archivos de Authelia sensibles
+infra/authelia/config/db.sqlite3
 infra/authelia/config/notification.txt
 infra/authelia/config/users.yml
 
-# === LENGUAJES Y ENTORNOS ===
-# Python
+# Logs de ejecución
+scripts/logs/*.log
+infra/admin-dashboard/logs/*.log
+*.log
+
+# --- INFRAESTRUCTURA Y DATOS ---
+# Datos de contenedores (Base de Datos, Volúmenes)
+infra/proxy/mysql/
+infra/proxy/data/
+infra/proxy/letsencrypt/
+infra/users-db/data/
+infra/users-db/users-db-v2/
+infra/users-db/users-db-data/
+backups/
+infra/backups/
+data/
+
+# --- OTROS ---
+# Python y Sistema
 __pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-env/
-.env/
-build/
-dist/
-*.egg-info/
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# === IDE Y SISTEMA ===
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
 *.swp
-*.swo
-**/volumes/
-
-# === LOGS DEL PROYECTO ===
-scripts/logs/*
-!scripts/logs/.gitkeep
+*.bak
+node_modules/
+dist/
+build/
+.gemini/

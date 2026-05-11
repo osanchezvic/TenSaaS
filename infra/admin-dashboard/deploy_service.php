@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // API Call
     $url = "http://infra_api:8000/deploy/" . urlencode($empresa) . "/" . urlencode($servicio);
-    $token = getenv('API_TOKEN') ?: "d7f3e8b1a9c4d2e5f6a7b8c9d0e1f2a3"; 
+    $token = getenv('API_TOKEN');
+    if (!$token) { die("Error: API_TOKEN not configured in environment."); }
     
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

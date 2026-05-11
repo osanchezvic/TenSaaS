@@ -114,7 +114,7 @@ services:
     ports:
       - '80:80'
       - '443:443'
-      - '81:81' # Panel de administración NPM
+      - '127.0.0.1:81:81' # Panel de administración NPM
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:81"]
       interval: 30s
@@ -174,7 +174,7 @@ services:
     networks:
       - infra_net
     environment:
-      - API_TOKEN=${API_TOKEN:-supersecrettoken}
+      - API_TOKEN=${API_TOKEN}
       - PROJECT_ROOT=/app
       - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT}
     # PUERTO CERRADO: Comunicación interna con Dashboard vía infra_net:8000
@@ -190,8 +190,8 @@ services:
       - DB_HOST=infra_users_db
       - DB_NAME=users_db
       - DB_USER=users_user
-      - DB_PASSWORD=users_pass
-      - API_TOKEN=${API_TOKEN:-d7f3e8b1a9c4d2e5f6a7b8c9d0e1f2a3}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - API_TOKEN=${API_TOKEN}
     volumes:
       - ./admin-dashboard:/var/www/html
       - ../catalogo:/var/www/catalogo

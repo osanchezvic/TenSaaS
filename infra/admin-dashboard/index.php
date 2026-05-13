@@ -92,8 +92,14 @@ if (!isset($_SESSION['admin'])) {
         mysqli_stmt_execute($st);
         $row = mysqli_fetch_assoc(mysqli_stmt_get_result($st));
         if ($row && password_verify($p, $row['hash_password'])) {
-            $_SESSION += ['admin' => 1, 'admin_id' => $row['id'], 'empresa_id' => $row['empresa_id'], 'es_admin' => $row['es_admin']];
-            header("Location: index.php"); exit;
+            $_SESSION += ['admin' => 1, 'admin_id' => $row['id'], 'empresa_id' => $row['empresa_id'], 'es_admin' => $row['es_admin'], 'usuario' => $u];
+            
+            if ($row['es_admin'] == 1) {
+                header("Location: index.php");
+            } else {
+                header("Location: portal.php");
+            }
+            exit;
         }
         $error = "Credenciales inválidas";
     }
@@ -177,14 +183,14 @@ h1{font-family:var(--fh);font-size:1.85rem;font-weight:800;letter-spacing:-.03em
 $stats = [];
 if ($_SESSION['es_admin'] == 1) {
     $r = mysqli_query($conn,
-        "SELECT (SELECT COUNT(*) FROM empresas WHERE estado='activa') as total_empresas,
+        "SELECT (SELECT COUNT(*) FROM empresas e WHERE e.estado='activa' AND EXISTS (SELECT 1 FROM servicios_contratados s WHERE s.empresa_id = e.id AND s.estado='activo')) as total_empresas,
                 (SELECT COUNT(*) FROM usuarios WHERE estado='activo') as total_usuarios,
                 (SELECT COUNT(*) FROM servicios_contratados WHERE estado='activo') as total_servicios");
     $stats = mysqli_fetch_assoc($r);
 }
 
 $where = $_SESSION['es_admin'] != 1 ? " AND id=?" : "";
-$st    = mysqli_prepare($conn, "SELECT * FROM empresas WHERE estado='activa'" . $where . " ORDER BY nombre");
+$st    = mysqli_prepare($conn, "SELECT e.* FROM empresas e WHERE e.estado='activa' AND EXISTS (SELECT 1 FROM servicios_contratados s WHERE s.empresa_id = e.id AND s.estado='activo')" . $where . " ORDER BY e.nombre");
 if ($_SESSION['es_admin'] != 1) mysqli_stmt_bind_param($st, 'i', $_SESSION['empresa_id']);
 mysqli_stmt_execute($st);
 $res = mysqli_stmt_get_result($st);

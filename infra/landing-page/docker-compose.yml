@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  landing:
+    build: .
+    container_name: landing_page
+    restart: unless-stopped
+    ports:
+      - '8081:80'
+    networks:
+      - infra_net
+
+networks:
+  infra_net:
+    external: true

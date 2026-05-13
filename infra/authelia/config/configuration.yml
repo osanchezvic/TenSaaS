@@ -41,10 +41,24 @@ access_control:
   rules:
     - domain: "auth.tensaas.es"
       policy: bypass
+
+    # REGLA MAESTRA PARA ADMINS: 2FA EN TODOS LOS SITIOS
+    - domain: ["panel.tensaas.es", "grafana.tensaas.es", "portainer.tensaas.es", "*.tensaas.es"]
+      subject: "group:admins"
+      policy: two_factor
+
+    # REGLAS PARA CLIENTES: 1FA Y SOLO SUS SITIOS
     - domain: "panel.tensaas.es"
-      policy: two_factor
-    - domain: "*.tensaas.es"
-      policy: two_factor
+      subject: "group:users"
+      policy: one_factor
+
+    - domain: ["panaderia.tensaas.es", "*.panaderia.tensaas.es"]
+      subject: "group:users"
+      policy: one_factor
+
+    - domain: ["btravel.tensaas.es", "*.btravel.tensaas.es"]
+      subject: "group:users"
+      policy: one_factor
 
 totp:
   issuer: ASIR_SaaS

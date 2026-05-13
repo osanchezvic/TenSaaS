@@ -17,16 +17,20 @@ TEST_SERVICIO="wordpress"
 PASS=0
 FAIL=0
 
+# Función para incrementar contadores de forma segura con set -e
+inc_pass() { PASS=$((PASS + 1)); }
+inc_fail() { FAIL=$((FAIL + 1)); }
+
 echo ""
 echo "====== TESTS DE VALIDACION ======"
 echo ""
 
 # Test 1: Listar servicios iniciales
 echo_info "TEST 1: Listar servicios (BD inicial)"
-if ./list.sh 2>/dev/null | head -3; then
-    ((PASS++))
+if ./list.sh > /dev/null 2>&1; then
+    inc_pass
 else
-    ((FAIL++))
+    inc_fail
 fi
 echo ""
 
@@ -37,10 +41,10 @@ echo ""
 
 if echo "y" | ./deploy.sh "$TEST_EMPRESA" "$TEST_SERVICIO" >/dev/null 2>&1; then
     echo_success "Deploy completado"
-    ((PASS++))
+    inc_pass
 else
     echo_error "Deploy fallido"
-    ((FAIL++))
+    inc_fail
 fi
 sleep 5
 echo ""
@@ -49,10 +53,10 @@ echo ""
 echo_info "TEST 3: Verificar que MariaDB se instaló automaticamente"
 if ./funciones/db.sh > /dev/null 2>&1 && grep -q "^$TEST_EMPRESA:mariadb:" "$DB_DIR/servicios.txt" 2>/dev/null; then
     echo_success "MariaDB registrado en BD"
-    ((PASS++))
+    inc_pass
 else
     echo_error "MariaDB no está en BD"
-    ((FAIL++))
+    inc_fail
 fi
 echo ""
 
@@ -60,24 +64,24 @@ echo ""
 echo_info "TEST 4: Verificar que WordPress se instaló"
 if grep -q "^$TEST_EMPRESA:$TEST_SERVICIO:" "$DB_DIR/servicios.txt" 2>/dev/null; then
     echo_success "WordPress registrado en BD"
-    ((PASS++))
+    inc_pass
 else
     echo_error "WordPress no está en BD"
-    ((FAIL++))
+    inc_fail
 fi
 echo ""
 
 # Test 5: List debe mostrar ambos servicios
 echo_info "TEST 5: List debe mostrar mariadb + wordpress"
-LIST_OUTPUT=$(./list.sh "$TEST_EMPRESA" 2>/dev/null)
+LIST_OUTPUT=$(./list.sh "$TEST_EMPRESA" 2>/dev/null || true)
 if echo "$LIST_OUTPUT" | grep -q "mariadb" && echo "$LIST_OUTPUT" | grep -q "wordpress"; then
     echo_success "Ambos servicios visibles"
     echo "$LIST_OUTPUT"
-    ((PASS++))
+    inc_pass
 else
     echo_error "No están ambos servicios en list"
     echo "$LIST_OUTPUT"
-    ((FAIL++))
+    inc_fail
 fi
 echo ""
 
@@ -86,10 +90,10 @@ echo_info "TEST 6: Get-credentials debe mostrar credenciales"
 if ./get-credentials.sh "$TEST_EMPRESA" "$TEST_SERVICIO" >/dev/null 2>&1; then
     echo_success "Credenciales recuperadas"
     ./get-credentials.sh "$TEST_EMPRESA" "$TEST_SERVICIO"
-    ((PASS++))
+    inc_pass
 else
     echo_error "No se pudieron obtener credenciales"
-    ((FAIL++))
+    inc_fail
 fi
 echo ""
 
@@ -98,10 +102,10 @@ echo_info "TEST 7: Destroy (eliminación segura)"
 echo_info "Confirma eliminación de servicios..."
 if echo "y" | ./destroy.sh "$TEST_EMPRESA" "$TEST_SERVICIO" >/dev/null 2>&1; then
     echo_success "Destroy completado"
-    ((PASS++))
+    inc_pass
 else
     echo_error "Destroy falló"
-    ((FAIL++))
+    inc_fail
 fi
 sleep 5
 echo ""
@@ -110,10 +114,10 @@ echo ""
 echo_info "TEST 8: Verificar que WordPress fue eliminado de BD"
 if ! grep -q "^$TEST_EMPRESA:$TEST_SERVICIO:" "$DB_DIR/servicios.txt" 2>/dev/null; then
     echo_success "WordPress eliminado correctamente"
-    ((PASS++))
+    inc_pass
 else
     echo_error "WordPress aún está en BD"
-    ((FAIL++))
+    inc_fail
 fi
 echo ""
 
@@ -121,10 +125,10 @@ echo ""
 echo_info "TEST 9: Verificar MariaDB (debería estar eliminado por dependencia)"
 if ! grep -q "^$TEST_EMPRESA:mariadb:" "$DB_DIR/servicios.txt" 2>/dev/null; then
     echo_warn "MariaDB también fue eliminada (comportamiento correcto)"
-    ((PASS++))
+    inc_pass
 else
     echo_info "MariaDB sigue en BD (si estaba compartida, es correcto)"
-    ((PASS++))
+    inc_pass
 fi
 echo ""
 

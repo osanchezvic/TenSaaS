@@ -34,6 +34,7 @@ db_register_servicio() {
     local empresa="$1"
     local servicio="$2"
     local puerto="$3"
+    local url="${4:-}"
     
     mkdir -p "$DB_DIR"
     
@@ -42,9 +43,9 @@ db_register_servicio() {
     fi
 
     local sql_query="
-        INSERT INTO servicios_contratados (empresa_id, nombre_servicio, puerto, tipo, estado) 
-        VALUES ((SELECT id FROM empresas WHERE nombre='$empresa'), '$servicio', $puerto, 'saas', 'activo')
-        ON DUPLICATE KEY UPDATE puerto=$puerto, estado='activo';
+        INSERT INTO servicios_contratados (empresa_id, nombre_servicio, puerto, tipo, url_admin, estado) 
+        VALUES ((SELECT id FROM empresas WHERE nombre='$empresa'), '$servicio', $puerto, 'saas', '$url', 'activo')
+        ON DUPLICATE KEY UPDATE puerto=$puerto, url_admin='$url', estado='activo';
     "
 
     if [ -f /.dockerenv ]; then

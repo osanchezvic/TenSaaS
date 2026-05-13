@@ -4,10 +4,16 @@
 # Requiere: NPM_URL, NPM_USER, NPM_PASSWORD
 
 npm_get_token() {
-    curl -s -X POST "${NPM_URL}/api/tokens" \
+    local response=$(curl -s -X POST "${NPM_URL}/api/tokens" \
         -H "Content-Type: application/json" \
-        -d "{\"identity\": \"${NPM_USER}\", \"secret\": \"${NPM_PASSWORD}\"}" \
-        | jq -r .token
+        -d "{\"identity\": \"${NPM_USER}\", \"secret\": \"${NPM_PASSWORD}\"}")
+    
+    local token=$(echo "$response" | jq -r .token 2>/dev/null || echo "")
+    
+    if [ "$token" == "null" ] || [ -z "$token" ]; then
+        return 1
+    fi
+    echo "$token"
 }
 
 npm_add_proxy() {

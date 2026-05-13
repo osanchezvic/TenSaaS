@@ -91,7 +91,8 @@ echo ""
 echo "Resumen de empresas:"
 echo ""
 sort -u "$DB_DIR/empresas.txt" 2>/dev/null | while read empresa; do
-    count=$(grep "^$empresa:" "$DB_DIR/servicios.txt" 2>/dev/null | wc -l)
+    [ -z "$empresa" ] && continue
+    count=$(grep -c "^$empresa:" "$DB_DIR/servicios.txt" 2>/dev/null || true)
     echo "  $empresa: $count servicio(s)"
 done
 

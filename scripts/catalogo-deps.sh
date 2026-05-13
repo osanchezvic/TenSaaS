@@ -25,7 +25,7 @@ for svc_dir in "$CATALOGO_DIR"/*; do
         continue
     fi
     
-deps=$(grep -A 10 "^dependencias:" "$cfg" 2>/dev/null | grep "^  - " || true | sed 's/^  - //')
+    deps=$(sed -n '/^dependencias:/,/^[^ ]/p' "$cfg" | grep "^  - " | sed 's/^  - //' || true)
 
     if [ -z "$deps" ]; then
         echo "[OK] $svc_name sin dependencias"

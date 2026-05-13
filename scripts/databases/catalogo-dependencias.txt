@@ -1,7 +1,7 @@
-gitea:  - mariadb
-grafana:  - prometheus
-nextcloud:  - mariadb,  - nextcloud
-phpmyadmin:  - mariadb
-prestashop:  - mariadb
-prometheus:  - node-exporter
-wordpress:  - mariadb
+gitea:mariadb
+grafana:prometheus
+nextcloud:mariadb
+phpmyadmin:mariadb
+prestashop:mariadb
+prometheus:node-exporter
+wordpress:mariadb

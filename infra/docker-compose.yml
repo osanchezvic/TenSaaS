@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # --- CONECTOR CLOUDFLARE (EL TÚNEL) ---
   cloudflared:
@@ -114,7 +112,7 @@ services:
     ports:
       - '80:80'
       - '443:443'
-      - '127.0.0.1:81:81' # Panel de administración NPM
+      - '81:81' # Panel de administración NPM
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:81"]
       interval: 30s

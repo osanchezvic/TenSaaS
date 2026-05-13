@@ -8,3 +8,9 @@ panaderia:jitsi:8107:running
 martincodax:mariadb:8108:running
 martincodax:prestashop:8109:running
 martincodax:gitea:8110:running
+test_env:mariadb:8106:running
+fruteria:mariadb:8111:running
+fruteria:wordpress:8112:running
+panaderia:prestashop:8113:running
+btravel:mariadb:8114:running
+btravel:wordpress:8115:running

@@ -31,8 +31,8 @@ obtener_dependencias() {
         return
     fi
     
-    # Buscar línea "dependencias:" y extraer lista
-    grep -A 10 "^dependencias:" "$config_file" 2>/dev/null | grep "^  - " | sed 's/^  - //' || true
+    # Extraer bloque de dependencias de forma robusta hasta la siguiente clave de primer nivel
+    sed -n '/^dependencias:/,/^[^ ]/p' "$config_file" | grep "^  - " | sed 's/^  - //' || true
 }
 
 # Validar y resolver dependencias automáticamente

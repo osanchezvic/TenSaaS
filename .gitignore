@@ -3,6 +3,7 @@
 .env
 infra/.env
 scripts/config.env
+.kilo
 
 # Credenciales generadas por los scripts
 scripts/databases/credentials/*

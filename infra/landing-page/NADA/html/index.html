@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TenSaaS · Infraestructura Digital para PYMEs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --white:   #ffffff;
+      --ink:     #080808;
+      --green:   #0dff72;
+      --green2:  #00cc58;
+      --grey:    #f2f2f0;
+      --muted:   #888880;
+      --border:  rgba(8,8,8,.1);
+      --ff-head: 'Syne', sans-serif;
+      --ff-body: 'Instrument Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--white);
+      color: var(--ink);
+      font-family: var(--ff-body);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── CURSOR ─────────────────────────────────────────── */
+    #cur {
+      position: fixed; width: 8px; height: 8px;
+      background: var(--green); border-radius: 50%;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%,-50%);
+      transition: width .2s, height .2s, background .2s;
+      mix-blend-mode: multiply;
+    }
+    #cur-ring {
+      position: fixed; width: 36px; height: 36px;
+      border: 1.5px solid var(--ink); border-radius: 50%;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%,-50%);
+      transition: width .22s ease, height .22s ease, border-color .2s, opacity .2s;
+      opacity: .4;
+    }
+    body.hov #cur { width: 18px; height: 18px; }
+    body.hov #cur-ring { width: 56px; height: 56px; opacity: .15; border-color: var(--green2); }
+
+    /* ── TOPBAR ─────────────────────────────────────────── */
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 101;
+      background: var(--ink); color: rgba(255,255,255,.55);
+      font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+      text-align: center; padding: .55rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    #topbar span { color: var(--green); margin: 0 .5rem; }
+
+    /* Bajar la nav para que quede debajo del topbar */
+    /* ── NAV ─────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 2.1rem; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.4rem 4rem;
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: var(--ff-head); font-size: 1.35rem;
+      font-weight: 800; letter-spacing: -.02em; color: var(--ink);
+      text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .logo-dot { width: 9px; height: 9px; background: var(--green); border-radius: 50%; display: inline-block; animation: pulse 2s ease-in-out infinite; flex-shrink:0; }
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.7} }
+
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta {
+      font-family: var(--ff-head); font-size: .75rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      background: var(--ink); color: var(--green);
+      padding: .65rem 1.6rem; text-decoration: none;
+      transition: background .2s, color .2s; cursor: none;
+      border: 2px solid var(--ink);
+    }
+    .nav-cta:hover { background: var(--green); color: var(--ink); border-color: var(--green); }
+
+    /* ── HERO ─────────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh; min-height: 100svh;
+      display: flex; flex-direction: column;
+      padding: 0 4rem; position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+    .hero-glow {
+      position: absolute; right: 4vw; top: 50%;
+      transform: translateY(-50%);
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(13,255,114,.22) 0%, transparent 70%);
+      pointer-events: none; animation: glow-breathe 4s ease-in-out infinite;
+    }
+    @keyframes glow-breathe { 0%,100%{opacity:.7;transform:translateY(-50%) scale(1)} 50%{opacity:1;transform:translateY(-50%) scale(1.06)} }
+
+    .hero-content { position: relative; z-index: 2; max-width: 58%; flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 9.5rem 0 3rem; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      border: 1px solid var(--border); padding: .4rem 1rem;
+      font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 2.5rem; background: var(--white);
+    }
+    .badge-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; flex-shrink: 0; }
+
+    h1 {
+      font-family: var(--ff-head); font-weight: 800;
+      font-size: clamp(4.5rem, 9.5vw, 10rem);
+      line-height: .9; letter-spacing: -.03em;
+      color: var(--ink); margin-bottom: 2rem;
+    }
+    h1 .hl {
+      position: relative; display: inline-block;
+      background: linear-gradient(transparent 60%, var(--green) 60%);
+      background-size: 0% 100%; background-repeat: no-repeat;
+      animation: hl-in 1s .7s cubic-bezier(.76,0,.24,1) forwards;
+    }
+    @keyframes hl-in { to { background-size: 100% 100%; } }
+
+    .hero-sub {
+      font-size: 1.05rem; font-weight: 400; line-height: 1.75;
+      color: var(--muted); max-width: 480px; margin-bottom: 3rem;
+    }
+    .hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+
+    .btn-fill {
+      display: inline-flex; align-items: center; gap: .7rem;
+      background: var(--ink); color: var(--white);
+      font-family: var(--ff-head); font-size: .8rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+      padding: 1rem 2rem; border: 2px solid var(--ink);
+      transition: background .2s, color .2s, border-color .2s; cursor: none;
+    }
+    .btn-fill:hover { background: var(--green); color: var(--ink); border-color: var(--green); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: transparent; color: var(--ink);
+      font-family: var(--ff-head); font-size: .8rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+      padding: 1rem 2rem; border: 2px solid var(--border);
+      transition: border-color .2s; cursor: none;
+    }
+    .btn-outline:hover { border-color: var(--ink); }
+
+    /* STATS STRIP */
+    .hero-stats {
+      display: flex; border-top: 1px solid var(--border);
+      background: var(--white); z-index: 3;
+      margin: 0 -4rem;  /* compensar el padding del hero para ancho completo */
+    }
+    .stat {
+      flex: 1; padding: 1.4rem 2rem;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: .2rem;
+      transition: background .2s;
+    }
+    .stat:last-child { border-right: none; }
+    .stat:hover { background: var(--green); }
+    .stat-num {
+      font-family: var(--ff-head); font-size: 1.6rem; font-weight: 800;
+      line-height: 1;
+    }
+    .stat-label { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .stat:hover .stat-label { color: var(--ink); }
+
+    /* ALPHA VIDEO WRAPPER */
+    #alpha-video-wrap {
+      position: fixed; right: 0; top: 50%;
+      transform: translateY(calc(-50% + var(--py, 0px)));
+      width: clamp(260px, 36vw, 560px);
+      z-index: 10; pointer-events: none;
+      transition: opacity .4s; will-change: transform;
+    }
+    #alpha-video-wrap.hidden { opacity: 0; }
+
+    .video-placeholder {
+      width: 100%; aspect-ratio: 3/4;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1.2rem;
+      border: 1.5px dashed rgba(13,255,114,.45);
+      background: rgba(13,255,114,.04);
+      color: var(--muted); font-size: .72rem;
+      letter-spacing: .12em; text-transform: uppercase;
+      text-align: center; padding: 2rem;
+      animation: breathe 3.5s ease-in-out infinite;
+    }
+    @keyframes breathe { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:.9;transform:scale(1.01)} }
+    .video-placeholder svg { opacity: .4; }
+    .video-placeholder strong { color: var(--green2); display: block; font-size: .9rem; margin-bottom: .3rem; }
+
+    /* ── MARQUEE ─────────────────────────────────────────── */
+    .marquee-wrap {
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: var(--grey); overflow: hidden; padding: .85rem 0;
+    }
+    .marquee-track {
+      display: flex; gap: 2.5rem; white-space: nowrap; width: max-content;
+      animation: tick 22s linear infinite;
+    }
+    .marquee-track span {
+      font-family: var(--ff-head); font-size: .88rem; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+    }
+    .marquee-track .hi { color: var(--green2); font-size: 1rem; }
+    @keyframes tick { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    /* ── SERVICES ────────────────────────────────────────── */
+    #services { padding: 10rem 4rem; }
+
+    .section-eyebrow {
+      display: flex; align-items: center; gap: .8rem;
+      font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 1.5rem;
+    }
+    .section-eyebrow .dash { width: 24px; height: 2px; background: var(--green); flex-shrink:0; }
+
+    .section-title {
+      font-family: var(--ff-head); font-weight: 800;
+      font-size: clamp(3rem, 6.5vw, 6.5rem); line-height: .93;
+      letter-spacing: -.03em; margin-bottom: 5rem;
+    }
+
+    .services-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--border); border: 1px solid var(--border);
+    }
+    .svc {
+      background: var(--white); padding: 2rem 1.8rem;
+      position: relative; overflow: hidden; cursor: default;
+    }
+    .svc::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--green); transform: translateY(101%);
+      transition: transform .3s cubic-bezier(.76,0,.24,1); z-index: 0;
+    }
+    .svc:hover::after { transform: translateY(0); }
+    .svc-name {
+      font-family: var(--ff-head); font-size: .92rem; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: .45rem; position: relative; z-index: 1;
+      transition: color .15s;
+    }
+    .svc-desc {
+      font-size: .76rem; line-height: 1.55; color: var(--muted);
+      position: relative; z-index: 1; transition: color .15s;
+    }
+    .svc:hover .svc-name, .svc:hover .svc-desc { color: var(--ink); }
+
+    /* ── STATEMENT ───────────────────────────────────────── */
+    #statement {
+      padding: 12rem 4rem; background: var(--ink); color: var(--white);
+      position: relative; overflow: hidden;
+    }
+    #statement::before {
+      content: 'TenSaaS'; position: absolute;
+      font-family: var(--ff-head); font-size: 26vw; font-weight: 800;
+      letter-spacing: -.05em; color: transparent;
+      -webkit-text-stroke: 1px rgba(255,255,255,.04);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      pointer-events: none; white-space: nowrap; user-select: none;
+    }
+    .statement-inner { position: relative; }
+    .statement-title {
+      font-family: var(--ff-head); font-size: clamp(3.5rem, 8vw, 9rem);
+      font-weight: 800; line-height: .92; letter-spacing: -.03em;
+    }
+    .statement-title .g { color: var(--green); }
+    .statement-cols {
+      display: flex; gap: 6rem; margin-top: 5rem; align-items: flex-start;
+    }
+    .statement-text {
+      font-size: 1rem; line-height: 1.8; color: rgba(255,255,255,.5);
+      max-width: 420px; flex: 1;
+    }
+    .statement-pills { display: flex; flex-wrap: wrap; gap: .55rem; flex: 1; }
+    .pill {
+      display: inline-flex; align-items: center; gap: .4rem;
+      border: 1px solid rgba(255,255,255,.12);
+      padding: .45rem .95rem; font-size: .76rem;
+      letter-spacing: .08em; color: rgba(255,255,255,.55);
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .pill:hover { border-color: var(--green); color: var(--green); background: rgba(13,255,114,.06); }
+    .pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* ── PRICING ─────────────────────────────────────────── */
+    #pricing { padding: 10rem 4rem; }
+    .pricing-head {
+      display: flex; align-items: flex-end;
+      justify-content: space-between; margin-bottom: 5rem;
+    }
+    .pricing-note { font-size: .82rem; color: var(--muted); max-width: 200px; text-align: right; line-height: 1.6; }
+
+    .plans {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+      background: var(--border); border: 1px solid var(--border);
+    }
+    .plan {
+      background: var(--white); padding: 2.8rem 2.2rem;
+      position: relative; overflow: hidden; transition: transform .25s;
+    }
+    .plan::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; background: transparent; transition: background .2s;
+    }
+    .plan:hover { transform: translateY(-4px); }
+    .plan:hover::before { background: var(--green); }
+    .plan.featured { background: var(--ink); color: var(--white); }
+    .plan.featured::before { background: var(--green); }
+    .plan-name {
+      font-family: var(--ff-head); font-size: .74rem; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--green2); margin-bottom: 1.5rem;
+    }
+    .plan.featured .plan-name { color: var(--green); }
+    .plan-price {
+      font-family: var(--ff-head); font-size: 3.5rem; font-weight: 800;
+      line-height: 1; letter-spacing: -.04em;
+    }
+    .plan.featured .plan-price { color: var(--white); }
+    .plan-period {
+      font-size: .74rem; color: var(--muted); margin-bottom: 2rem; margin-top: .3rem; letter-spacing: .08em;
+    }
+    .plan.featured .plan-period { color: rgba(255,255,255,.35); }
+    .plan-services {
+      font-size: .8rem; line-height: 1.65; color: var(--muted);
+      padding: 1rem 0; border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); margin-bottom: 2rem;
+    }
+    .plan.featured .plan-services { border-color: rgba(255,255,255,.1); color: rgba(255,255,255,.5); }
+    .plan-services strong { display: block; font-weight: 600; margin-bottom: .25rem; color: var(--ink); }
+    .plan.featured .plan-services strong { color: rgba(255,255,255,.85); }
+    .plan-support {
+      font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 2rem;
+    }
+    .plan.featured .plan-support { color: rgba(255,255,255,.3); }
+    .plan-btn {
+      display: block; text-align: center; padding: .85rem;
+      font-family: var(--ff-head); font-size: .75rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; text-decoration: none;
+      cursor: none; border: 2px solid var(--border); color: var(--ink);
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .plan-btn:hover { background: var(--green); border-color: var(--green); color: var(--ink); }
+    .plan.featured .plan-btn { border-color: var(--green); color: var(--green); }
+    .plan.featured .plan-btn:hover { background: var(--green); color: var(--ink); }
+
+    .extras {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--border); border: 1px solid var(--border); border-top: none;
+    }
+    .extra {
+      background: var(--grey); padding: 1.4rem 1.5rem;
+      transition: background .2s;
+    }
+    .extra:hover { background: var(--green); }
+    .extra:hover .extra-name { color: var(--ink); }
+    .extra:hover .extra-price { color: var(--ink); }
+    .extra-name { font-size: .78rem; font-weight: 500; margin-bottom: .25rem; transition: color .2s; }
+    .extra-price {
+      font-family: var(--ff-head); font-size: .9rem; font-weight: 700;
+      color: var(--green2); letter-spacing: .04em; transition: color .2s;
+    }
+
+    /* ── TECH STACK ──────────────────────────────────────── */
+    #stack { padding: 8rem 4rem; background: var(--grey); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .stack-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+      background: var(--border); border: 1px solid var(--border); margin-top: 4rem;
+    }
+    .stack-item {
+      background: var(--grey); padding: 2rem 1.5rem; text-align: center;
+      transition: background .2s;
+    }
+    .stack-item:hover { background: var(--green); }
+    .stack-item:hover .stack-name, .stack-item:hover .stack-role { color: var(--ink); }
+    .stack-icon { font-size: 1.6rem; margin-bottom: .6rem; }
+    .stack-name {
+      font-family: var(--ff-head); font-size: .82rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; transition: color .2s;
+    }
+    .stack-role { font-size: .7rem; color: var(--muted); margin-top: .2rem; transition: color .2s; }
+
+    /* ── DAFO ────────────────────────────────────────────── */
+    #dafo { padding: 10rem 4rem; }
+    .dafo-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+      background: var(--border); border: 1px solid var(--border); margin-top: 4rem;
+    }
+    .dafo-cell {
+      background: var(--white); padding: 3rem 2.5rem;
+      transition: background .25s;
+    }
+    .dafo-cell:hover { background: #f8fff9; }
+    .dafo-cell.F { border-left: 3px solid var(--green2); }
+    .dafo-cell.D { border-left: 3px solid #ff4040; }
+    .dafo-cell.O { border-left: 3px solid #0088ff; }
+    .dafo-cell.A { border-left: 3px solid #ff8800; }
+    .dafo-label {
+      font-family: var(--ff-head); font-size: 2.2rem; font-weight: 800;
+      letter-spacing: -.03em; margin-bottom: 1.5rem;
+    }
+    .dafo-cell.F .dafo-label { color: var(--green2); }
+    .dafo-cell.D .dafo-label { color: #ff4040; }
+    .dafo-cell.O .dafo-label { color: #0088ff; }
+    .dafo-cell.A .dafo-label { color: #ff8800; }
+    .dafo-list { list-style: none; display: flex; flex-direction: column; gap: .65rem; }
+    .dafo-list li {
+      font-size: .86rem; color: var(--muted); line-height: 1.6;
+      padding-left: 1rem; border-left: 1px solid var(--border);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border); padding: 2.5rem 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-logo {
+      font-family: var(--ff-head); font-size: 1.1rem; font-weight: 800;
+      letter-spacing: -.02em; display: flex; align-items: center; gap: .4rem;
+    }
+    .footer-copy { font-size: .72rem; color: var(--muted); letter-spacing: .05em; }
+    .footer-links { display: flex; gap: 2rem; list-style: none; }
+    .footer-links a {
+      font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none; transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--green2); }
+
+    /* ── REVEAL ──────────────────────────────────────────── */
+    .reveal { opacity: 0; transform: translateY(32px); transition: opacity .65s ease, transform .65s ease; }
+    .reveal.on { opacity: 1; transform: none; }
+
+    /* ── HAMBURGER ───────────────────────────────────────── */
+    .nav-hamburger {
+      display: none; flex-direction: column; justify-content: center;
+      gap: 5px; width: 36px; height: 36px; cursor: pointer;
+      background: none; border: none; padding: 4px;
+      position: relative; z-index: 200;
+    }
+    .nav-hamburger span {
+      display: block; height: 2px; background: var(--ink);
+      border-radius: 2px; transition: transform .3s, opacity .3s;
+    }
+    .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .nav-mobile-drawer {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--white); z-index: 99; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2.5rem;
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+    }
+    .nav-mobile-drawer.open { opacity: 1; pointer-events: all; }
+    .nav-mobile-drawer a {
+      font-family: var(--ff-head); font-size: 2rem; font-weight: 800;
+      letter-spacing: -.03em; color: var(--ink); text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-mobile-drawer a:hover { color: var(--green2); }
+    .nav-mobile-drawer .nav-cta-mobile {
+      font-family: var(--ff-head); font-size: .85rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      background: var(--ink); color: var(--green);
+      padding: .9rem 2.4rem; text-decoration: none;
+      border: 2px solid var(--ink); margin-top: 1rem;
+      transition: background .2s, color .2s;
+    }
+    .nav-mobile-drawer .nav-cta-mobile:hover { background: var(--green); color: var(--ink); }
+
+    @media (max-width: 600px) {
+      #topbar { display: none; }
+      nav { top: 0; }
+    }
+
+    /* ── TOUCH: no custom cursor ─────────────────────────── */
+    @media (hover: none) and (pointer: coarse) {
+      body { cursor: auto; }
+      #cur, #cur-ring { display: none; }
+      a, button, .plan-btn, .btn-fill, .btn-outline, .nav-cta { cursor: pointer; }
+    }
+
+    /* ── RESPONSIVE: tablet (≤960px) ────────────────────── */
+    @media (max-width: 960px) {
+      nav { padding: 1.2rem 2rem; }
+      .nav-links { display: none; }
+      .nav-hamburger { display: flex; }
+      .nav-mobile-drawer { display: flex; }
+      .nav-cta { display: none; }
+
+      /* El stats strip pasa a flow normal, así que quitamos el
+         padding-bottom que reservaba espacio para la barra absoluta */
+      #hero { padding: 0 2rem; min-height: 100svh; }
+      .hero-content { padding: 8rem 0 3rem; max-width: 100%; }
+      .hero-stats { margin: 0 -2rem; }
+      #alpha-video-wrap { display: none; }
+
+      .hero-glow { display: none; }
+
+      .hero-stats {
+        position: relative; display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-top: 1px solid var(--border);
+      }
+      .stat { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+      .stat:nth-child(3n), .stat:last-child { border-right: none; }
+
+      .services-grid { grid-template-columns: 1fr 1fr; }
+      .plans { grid-template-columns: 1fr 1fr; }
+      .extras { grid-template-columns: 1fr 1fr; }
+      .stack-grid { grid-template-columns: repeat(3, 1fr); }
+      .dafo-grid { grid-template-columns: 1fr; }
+      #services, #pricing, #stack, #dafo, #statement { padding: 6rem 2rem; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .footer-links { justify-content: center; flex-wrap: wrap; gap: 1.2rem; }
+      .pricing-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .statement-cols { flex-direction: column; gap: 3rem; }
+      .pricing-note { text-align: left; }
+
+      /* El plan "Empresa" ocupa las dos columnas para mantener su prominencia */
+      .plan.featured { grid-column: span 2; }
+    }
+
+    /* ── RESPONSIVE: mobile (≤600px) ─────────────────────── */
+    @media (max-width: 600px) {
+      h1 { font-size: clamp(2.8rem, 12vw, 4.5rem); }
+      .section-title { font-size: clamp(2.2rem, 10vw, 3rem); margin-bottom: 3rem; }
+      .statement-title { font-size: clamp(2.5rem, 12vw, 4rem); }
+
+      #hero { padding: 0 1.25rem; }
+      .hero-content { padding: 6rem 0 2.5rem; max-width: 100%; }
+      .hero-stats { margin: 0 -1.25rem; }
+
+      .badge { margin-bottom: 1.5rem; font-size: .65rem; }
+      .hero-sub { font-size: .92rem; }
+      .hero-actions { flex-direction: column; align-items: stretch; gap: .75rem; }
+      .btn-fill, .btn-outline { width: 100%; justify-content: center; }
+
+      .hero-stats {
+        grid-template-columns: repeat(2, 1fr);
+        overflow-x: visible;
+      }
+      /* Con 5 stats en rejilla 2 columnas: 2+2+1. El último abarca ambas. */
+      .stat { border-right: 1px solid var(--border); }
+      .stat:nth-child(2n) { border-right: none; }
+      .stat:nth-child(5) { grid-column: span 2; border-right: none; }
+
+      .services-grid { grid-template-columns: 1fr; }
+      .plans { grid-template-columns: 1fr; }
+      .plan.featured { grid-column: auto; }  /* Resetear el span del tablet */
+      .extras { grid-template-columns: 1fr 1fr; }
+      .stack-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .plan-price { font-size: 2.8rem; }
+      .plan { padding: 2rem 1.5rem; }
+
+      #services, #pricing, #stack, #statement { padding: 4rem 1.25rem; }
+      footer { padding: 2rem 1.25rem; }
+      .footer-links { gap: 1rem; }
+
+      .statement-cols { gap: 2rem; }
+      .statement-text { font-size: .9rem; }
+    }
+
+    /* ── RESPONSIVE: tiny phones (≤380px) ───────────────── */
+    @media (max-width: 380px) {
+      nav { padding: 1rem 1.25rem; }
+      #hero { padding: 0 1rem; }
+      .hero-content { padding: 5.5rem 0 2rem; }
+      .hero-stats { margin: 0 -1rem; }
+      h1 { font-size: clamp(2.4rem, 13vw, 3.5rem); }
+      .extras { grid-template-columns: 1fr; }
+      .stack-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero-stats { grid-template-columns: 1fr 1fr; }
+      .stat { padding: 1rem .85rem; }
+      .stat-num { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="topbar">ASIR 2025–2026<span>·</span>IES Armando Cotarelo Valledor</div>
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="logo">
+      <span class="logo-dot"></span>TenSaaS
+    </a>
+    <ul class="nav-links">
+      <li><a href="#services">Servicios</a></li>
+      <li><a href="#pricing">Precios</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="https://github.com/osanchezvic/SaaS-multiempresa-ASIR" target="_blank">GitHub</a></li>
+    </ul>
+    <a href="#pricing" class="nav-cta">Ver planes →</a>
+    <button class="nav-hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- MOBILE DRAWER -->
+  <div class="nav-mobile-drawer" id="mobile-drawer" role="dialog" aria-label="Navegación">
+    <a href="#services" class="drawer-link">Servicios</a>
+    <a href="#pricing" class="drawer-link">Precios</a>
+    <a href="#stack" class="drawer-link">Stack</a>
+    <a href="https://github.com/osanchezvic/SaaS-multiempresa-ASIR" target="_blank" class="drawer-link">GitHub</a>
+    <a href="#pricing" class="nav-cta-mobile">Ver planes →</a>
+  </div>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-content">
+      <h1>
+        No se que poner
+        <span class="hl">aki</span><br/>
+        miau
+      </h1>
+      <p class="hero-sub">
+        TenSaaS aprovisiona entornos completamente aislados para múltiples clientes sobre un mismo servidor — subdominio propio, HTTPS automático, cero intervención manual.
+      </p>
+      <div class="hero-actions">
+        <a href="#pricing" class="btn-fill">
+          Ver planes
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="https://github.com/osanchezvic/SaaS-multiempresa-ASIR" target="_blank" class="btn-outline">Ver repositorio →</a>
+      </div>
+    </div>
+
+    <div class="hero-glow" aria-hidden="true"></div>
+
+    <!--
+    ════════════════════════════════════════════════════════
+    ALPHA VIDEO — INSTRUCCIONES DE USO
+    ════════════════════════════════════════════════════════
+    Para activar el video transparente real, sustituye el
+    div.video-placeholder por el siguiente bloque:
+
+    <video id="alpha-video" autoplay loop muted playsinline>
+      <source src="assets/hero.webm" type="video/webm" />
+      <source src="assets/hero.mov" type="video/mp4;codecs=hvc1" />
+    </video>
+
+    FORMATOS NECESARIOS para transparencia real:
+    • .webm con VP9 + canal alpha  → Chrome, Firefox, Edge
+    • .mov con HEVC + canal alpha  → Safari, iOS
+
+    Exporta desde After Effects / DaVinci con fondo
+    transparente y sin pre-multiplicar el canal alpha.
+
+    Dimensiones recomendadas: 800×1200 px · 30 fps
+    ════════════════════════════════════════════════════════
+    -->
+    <div id="alpha-video-wrap" aria-hidden="true">
+      <div class="video-placeholder">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+          <circle cx="22" cy="22" r="20" stroke="#0dff72" stroke-width="1.5"/>
+          <path d="M17 15l14 7-14 7V15z" fill="#0dff72"/>
+        </svg>
+        <span>
+          <strong>Alpha Video</strong>
+          Inserta aquí tu video<br/>con fondo transparente<br/>.webm / .mov
+        </span>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">17</span>
+        <span class="stat-label">Servicios en catálogo</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">9,99€</span>
+        <span class="stat-label">Desde / mes</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">100%</span>
+        <span class="stat-label">Open source</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">RGPD</span>
+        <span class="stat-label">Datos en España</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">0</span>
+        <span class="stat-label">Intervención manual</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Docker</span><span class="hi">·</span>
+      <span>Bash</span><span class="hi">·</span>
+      <span>Nginx Proxy Manager</span><span class="hi">·</span>
+      <span>Let's Encrypt</span><span class="hi">·</span>
+      <span>Nextcloud</span><span class="hi">·</span>
+      <span>WireGuard VPN</span><span class="hi">·</span>
+      <span>Grafana</span><span class="hi">·</span>
+      <span>Prometheus</span><span class="hi">·</span>
+      <span>Fail2ban</span><span class="hi">·</span>
+      <span>Portainer</span><span class="hi">·</span>
+      <span>Vaultwarden</span><span class="hi">·</span>
+      <span>Watchtower</span><span class="hi">·</span>
+      <span>Docker</span><span class="hi">·</span>
+      <span>Bash</span><span class="hi">·</span>
+      <span>Nginx Proxy Manager</span><span class="hi">·</span>
+      <span>Let's Encrypt</span><span class="hi">·</span>
+      <span>Nextcloud</span><span class="hi">·</span>
+      <span>WireGuard VPN</span><span class="hi">·</span>
+      <span>Grafana</span><span class="hi">·</span>
+      <span>Prometheus</span><span class="hi">·</span>
+      <span>Fail2ban</span><span class="hi">·</span>
+      <span>Portainer</span><span class="hi">·</span>
+      <span>Vaultwarden</span><span class="hi">·</span>
+      <span>Watchtower</span><span class="hi">·</span>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="section-eyebrow reveal"><span class="dash"></span>Catálogo de servicios</div>
+    <h2 class="section-title reveal">17 servicios.<br/>Un comando.</h2>
+
+    <div class="services-grid">
+      <div class="svc"><div class="svc-name">Nextcloud</div><div class="svc-desc">Almacenamiento y colaboración en la nube privada</div></div>
+      <div class="svc"><div class="svc-name">WordPress</div><div class="svc-desc">Web corporativa con CMS gestionable</div></div>
+      <div class="svc"><div class="svc-name">WireGuard VPN</div><div class="svc-desc">Acceso remoto seguro a la red corporativa</div></div>
+      <div class="svc"><div class="svc-name">Vaultwarden</div><div class="svc-desc">Gestor de contraseñas compatible Bitwarden</div></div>
+      <div class="svc"><div class="svc-name">Gitea</div><div class="svc-desc">Repositorio de código Git autogestionado</div></div>
+      <div class="svc"><div class="svc-name">Grafana</div><div class="svc-desc">Paneles de monitorización y métricas visuales</div></div>
+      <div class="svc"><div class="svc-name">Prometheus</div><div class="svc-desc">Recolección y almacenamiento de métricas</div></div>
+      <div class="svc"><div class="svc-name">Zabbix</div><div class="svc-desc">Monitorización avanzada de infraestructura</div></div>
+      <div class="svc"><div class="svc-name">Jitsi</div><div class="svc-desc">Videoconferencia corporativa autogestionada</div></div>
+      <div class="svc"><div class="svc-name">PrestaShop</div><div class="svc-desc">Tienda de comercio electrónico corporativa</div></div>
+      <div class="svc"><div class="svc-name">Portainer</div><div class="svc-desc">Gestión visual de contenedores Docker</div></div>
+      <div class="svc"><div class="svc-name">PhpMyAdmin</div><div class="svc-desc">Administración web de bases de datos MariaDB</div></div>
+      <div class="svc"><div class="svc-name">Redis</div><div class="svc-desc">Caché de alto rendimiento y broker de mensajes</div></div>
+      <div class="svc"><div class="svc-name">Uptime Kuma</div><div class="svc-desc">Vigilancia de disponibilidad de servicios</div></div>
+      <div class="svc"><div class="svc-name">Nginx</div><div class="svc-desc">Servidor web y proxy inverso adicional</div></div>
+      <div class="svc"><div class="svc-name">Node-exporter</div><div class="svc-desc">Exportador de métricas del host para Prometheus</div></div>
+      <div class="svc"><div class="svc-name">Panel</div><div class="svc-desc">Dashboard de acceso personalizado por cliente</div></div>
+    </div>
+  </section>
+
+  <!-- STATEMENT -->
+  <section id="statement">
+    <div class="statement-inner">
+      <h2 class="statement-title reveal">
+        Una empresa.<br/>Un comando.<br/>
+        <span class="g">Listo.</span>
+      </h2>
+      <div class="statement-cols">
+        <p class="statement-text reveal">
+          Infraestructura <span class="g">Enterprise</span> al alcance de la PYME. 
+          TenSaaS elimina la fricción técnica mediante aislamiento real por tenant y despliegues 100% automatizados.
+        </p>
+        <div class="statement-pills reveal">
+          <span class="pill">Red Docker aislada por empresa</span>
+          <span class="pill">Puertos sin colisiones</span>
+          <span class="pill">HTTPS automático · Let's Encrypt</span>
+          <span class="pill">Backup previo a destrucción</span>
+          <span class="pill">Dependencias auto-resueltas</span>
+          <span class="pill">Soberanía digital · España</span>
+          <span class="pill">RGPD compliant</span>
+          <span class="pill">100% open source</span>
+          <span class="pill">Fail2ban integrado</span>
+          <span class="pill">Watchtower auto-updates</span>
+          <span class="pill">Salida JSON / CSV / tabla</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="pricing-head">
+      <div>
+        <div class="section-eyebrow reveal"><span class="dash"></span>Precios</div>
+        <h2 class="section-title reveal">Planes<br/>claros.</h2>
+      </div>
+      <p class="pricing-note reveal">IVA no incluido. Sin permanencia. Cancelación mensual.</p>
+    </div>
+
+    <div class="plans">
+      <div class="plan reveal">
+        <div class="plan-name">Básico</div>
+        <div class="plan-price">9,99€</div>
+        <div class="plan-period">/ mes · 1 empresa</div>
+        <div class="plan-services"><strong>Servicios</strong>WordPress + MariaDB</div>
+        <div class="plan-support">Soporte via Email</div>
+        <a href="contacto.html?plan=B%C3%A1sico" class="plan-btn">>Empezar →</a>
+      </div>
+      <div class="plan reveal">
+        <div class="plan-name">Seguridad</div>
+        <div class="plan-price">19,99€</div>
+        <div class="plan-period">/ mes · 1 empresa</div>
+        <div class="plan-services"><strong>Servicios</strong>WireGuard VPN + Vaultwarden + Fail2ban</div>
+        <div class="plan-support">Soporte Email + Chat</div>
+        <a href="contacto.html?plan=Seguridad" class="plan-btn">>Empezar →</a>
+      </div>
+      <div class="plan featured reveal">
+        <div class="plan-name">Empresa ★ Popular</div>
+        <div class="plan-price">24,99€</div>
+        <div class="plan-period">/ mes · 1 empresa</div>
+        <div class="plan-services"><strong>Servicios</strong>Nextcloud + WireGuard VPN + Vaultwarden</div>
+        <div class="plan-support">Soporte Email + Chat</div>
+        <a href="contacto.html?plan=Empresa" class="plan-btn">>Empezar →</a>
+      </div>
+      <div class="plan reveal">
+        <div class="plan-name">Monitorización</div>
+        <div class="plan-price">24,99€</div>
+        <div class="plan-period">/ mes · 1 empresa</div>
+        <div class="plan-services"><strong>Servicios</strong>Grafana + Prometheus + Zabbix + Node-exporter</div>
+        <div class="plan-support">Soporte Email + Chat</div>
+        <a href="contacto.html?plan=Monitorizaci%C3%B3n" class="plan-btn">>Empezar →</a>
+      </div>
+      <div class="plan reveal">
+        <div class="plan-name">Dev</div>
+        <div class="plan-price">34,99€</div>
+        <div class="plan-period">/ mes · 1 empresa</div>
+        <div class="plan-services"><strong>Servicios</strong>Gitea + MariaDB + Redis + Nginx</div>
+        <div class="plan-support">Soporte Email + Chat</div>
+        <a href="contacto.html?plan=Dev" class="plan-btn">>Empezar →</a>
+      </div>
+      <div class="plan reveal">
+        <div class="plan-name">Completo</div>
+        <div class="plan-price">49,99€</div>
+        <div class="plan-period">/ mes · hasta 6 servicios</div>
+        <div class="plan-services"><strong>Servicios</strong>Stack completo a medida del catálogo</div>
+        <div class="plan-support">Soporte Prioritario</div>
+        <a href="contacto.html?plan=Completo" class="plan-btn">>Empezar →</a>
+      </div>
+    </div>
+
+    <div class="extras">
+      <div class="extra">
+        <div class="extra-name">Almacenamiento +50 GB</div>
+        <div class="extra-price">6,99 €/mes</div>
+      </div>
+      <div class="extra">
+        <div class="extra-name">Soporte prioritario</div>
+        <div class="extra-price">9,99 €/mes</div>
+      </div>
+      <div class="extra">
+        <div class="extra-name">Migración de datos</div>
+        <div class="extra-price">49,99 € único</div>
+      </div>
+      <div class="extra">
+        <div class="extra-name">Dominio propio</div>
+        <div class="extra-price">19,99 € único</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section id="stack">
+    <div class="section-eyebrow reveal"><span class="dash"></span>Stack tecnológico</div>
+    <h2 class="section-title reveal">100% software<br/>libre.</h2>
+    <div class="stack-grid">
+      <div class="stack-item reveal">
+        <div class="stack-icon">🐳</div>
+        <div class="stack-name">Docker</div>
+        <div class="stack-role">Contenedorización</div>
+      </div>
+      <div class="stack-item reveal">
+        <div class="stack-icon">📜</div>
+        <div class="stack-name">Bash</div>
+        <div class="stack-role">Orquestación</div>
+      </div>
+      <div class="stack-item reveal">
+        <div class="stack-icon">🔀</div>
+        <div class="stack-name">Nginx PM</div>
+        <div class="stack-role">Proxy + SSL</div>
+      </div>
+      <div class="stack-item reveal">
+        <div class="stack-icon">🔒</div>
+        <div class="stack-name">Let's Encrypt</div>
+        <div class="stack-role">Certificados TLS</div>
+      </div>
+      <div class="stack-item reveal">
+        <div class="stack-icon">☁️</div>
+        <div class="stack-name">Cloudflare</div>
+        <div class="stack-role">DNS + DDoS</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DAFO 
+  <section id="dafo">
+    <div class="section-eyebrow reveal"><span class="dash"></span>Análisis estratégico</div>
+    <h2 class="section-title reveal">DAFO.</h2>
+    <div class="dafo-grid">
+      <div class="dafo-cell F reveal">
+        <div class="dafo-label">Fortalezas</div>
+        <ul class="dafo-list">
+          <li>Alta automática sin intervención manual</li>
+          <li>Stack 100% open source · sin costes de licencias</li>
+          <li>Catálogo modular y ampliable con nueva carpeta</li>
+          <li>Backups automáticos integrados en destroy.sh</li>
+          <li>Soporte local y personalizado</li>
+        </ul>
+      </div>
+      <div class="dafo-cell D reveal">
+        <div class="dafo-label">Debilidades</div>
+        <ul class="dafo-list">
+          <li>Proyecto unipersonal · capacidad de soporte limitada</li>
+          <li>Dependencia de un único servidor físico en prototipo</li>
+          <li>Sin marca ni reputación consolidada</li>
+        </ul>
+      </div>
+      <div class="dafo-cell O reveal">
+        <div class="dafo-label">Oportunidades</div>
+        <ul class="dafo-list">
+          <li>Creciente digitalización de PYMEs españolas</li>
+          <li>Interés institucional por soberanía digital y RGPD</li>
+          <li>Ayudas del Kit Digital para PYMEs</li>
+          <li>+180.000 empresas en Galicia · baja penetración digital</li>
+        </ul>
+      </div>
+      <div class="dafo-cell A reveal">
+        <div class="dafo-label">Amenazas</div>
+        <ul class="dafo-list">
+          <li>Competencia de Hostinger, OVHcloud, Hetzner</li>
+          <li>Evolución rápida del ecosistema Docker</li>
+          <li>Regulación RGPD / LOPDGDD</li>
+          <li>Dependencia de proveedor de dominio e IP fija</li>
+        </ul>
+      </div>
+    </div>
+  </section>-->
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">
+      <span class="logo-dot"></span>TenSaaS
+    </div>
+    <p class="footer-copy">© 2026 Óscar Sánchez Victoria · Proyecto ASIR · IES Armando Cotarelo Valledor</p>
+    <ul class="footer-links">
+      <li><a href="https://github.com/osanchezvic/SaaS-multiempresa-ASIR" target="_blank">GitHub</a></li>
+      <li><a href="privacidad.html">Privacidad</a></li>
+      <li><a href="contacto.html">Contacto</a></li>
+    </ul>
+  </footer>
+
+  <script>
+    /* ── CUSTOM CURSOR ────────────────────────────────── */
+    const cur = document.getElementById('cur');
+    const ring = document.getElementById('cur-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function loop() {
+      rx += (mx - rx) * .14;
+      ry += (my - ry) * .14;
+      cur.style.left = mx + 'px'; cur.style.top = my + 'px';
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(loop);
+    })();
+    document.querySelectorAll('a, button, .svc, .plan, .extra, .stack-item, .dafo-cell, .stat').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('hov'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('hov'));
+    });
+
+    /* ── ALPHA VIDEO PARALLAX ─────────────────────────
+       Velocidad parallax: 0 = fijo, 1 = igual que scroll.
+       0.3 = suave y elegante.
+    ─────────────────────────────────────────────────── */
+    const vw = document.getElementById('alpha-video-wrap');
+    const heroEl = document.getElementById('hero');
+    function updateV() {
+      const r = heroEl.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) {
+        vw.classList.add('hidden'); return;
+      }
+      vw.classList.remove('hidden');
+      vw.style.setProperty('--py', (window.scrollY * .3) + 'px');
+    }
+    window.addEventListener('scroll', updateV, { passive: true });
+    updateV();
+
+    /* ── SCROLL REVEAL ────────────────────────────────── */
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('on'); });
+    }, { threshold: .1 });
+    document.querySelectorAll('.reveal').forEach((el, i) => {
+      el.style.transitionDelay = (i % 5) * 70 + 'ms';
+      io.observe(el);
+    });
+    /* ── HAMBURGER MENU ───────────────────────────────────── */
+    const hamburger = document.getElementById('hamburger');
+    const drawer = document.getElementById('mobile-drawer');
+    function toggleDrawer(open) {
+      hamburger.classList.toggle('open', open);
+      drawer.classList.toggle('open', open);
+      hamburger.setAttribute('aria-expanded', open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    }
+    hamburger.addEventListener('click', () => toggleDrawer(!drawer.classList.contains('open')));
+    document.querySelectorAll('.drawer-link, .nav-cta-mobile').forEach(link => {
+      link.addEventListener('click', () => toggleDrawer(false));
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleDrawer(false); });
+  </script>
+</body>
+</html>
+

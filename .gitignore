@@ -4,6 +4,7 @@
 infra/.env
 scripts/config.env
 .kilo
+CREDENCIALES_INFRA.md
 
 # Credenciales generadas por los scripts
 scripts/databases/credentials/*

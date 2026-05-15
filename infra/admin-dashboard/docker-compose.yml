@@ -9,7 +9,7 @@ services:
       DB_HOST: infra_users_db
       DB_NAME: users_db
       DB_USER: users_user
-      DB_PASSWORD: users_pass
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8080:80"
     networks:

@@ -34,7 +34,8 @@ if (isset($_GET['action'])) {
     }
 
     if ($_GET['action'] === 'get_real_status') {
-        $token = getenv('API_TOKEN') ?: 'd7f3e8b1a9c4d2e5f6a7b8c9d0e1f2a3';
+        $token = getenv('API_TOKEN');
+        if (!$token) { echo json_encode(['status' => 'error', 'message' => 'API_TOKEN not set']); exit; }
         $ch = curl_init('http://infra_api:8000/api/v1/system/status');
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -92,14 +93,8 @@ if (!isset($_SESSION['admin'])) {
         mysqli_stmt_execute($st);
         $row = mysqli_fetch_assoc(mysqli_stmt_get_result($st));
         if ($row && password_verify($p, $row['hash_password'])) {
-            $_SESSION += ['admin' => 1, 'admin_id' => $row['id'], 'empresa_id' => $row['empresa_id'], 'es_admin' => $row['es_admin'], 'usuario' => $u];
-            
-            if ($row['es_admin'] == 1) {
-                header("Location: index.php");
-            } else {
-                header("Location: portal.php");
-            }
-            exit;
+            $_SESSION += ['admin' => 1, 'admin_id' => $row['id'], 'empresa_id' => $row['empresa_id'], 'es_admin' => $row['es_admin']];
+            header("Location: index.php"); exit;
         }
         $error = "Credenciales inválidas";
     }
@@ -183,14 +178,14 @@ h1{font-family:var(--fh);font-size:1.85rem;font-weight:800;letter-spacing:-.03em
 $stats = [];
 if ($_SESSION['es_admin'] == 1) {
     $r = mysqli_query($conn,
-        "SELECT (SELECT COUNT(*) FROM empresas e WHERE e.estado='activa' AND EXISTS (SELECT 1 FROM servicios_contratados s WHERE s.empresa_id = e.id AND s.estado='activo')) as total_empresas,
+        "SELECT (SELECT COUNT(*) FROM empresas WHERE estado='activa') as total_empresas,
                 (SELECT COUNT(*) FROM usuarios WHERE estado='activo') as total_usuarios,
                 (SELECT COUNT(*) FROM servicios_contratados WHERE estado='activo') as total_servicios");
     $stats = mysqli_fetch_assoc($r);
 }
 
 $where = $_SESSION['es_admin'] != 1 ? " AND id=?" : "";
-$st    = mysqli_prepare($conn, "SELECT e.* FROM empresas e WHERE e.estado='activa' AND EXISTS (SELECT 1 FROM servicios_contratados s WHERE s.empresa_id = e.id AND s.estado='activo')" . $where . " ORDER BY e.nombre");
+$st    = mysqli_prepare($conn, "SELECT * FROM empresas WHERE estado='activa'" . $where . " ORDER BY nombre");
 if ($_SESSION['es_admin'] != 1) mysqli_stmt_bind_param($st, 'i', $_SESSION['empresa_id']);
 mysqli_stmt_execute($st);
 $res = mysqli_stmt_get_result($st);
@@ -568,6 +563,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       Grafana
     </a>
+    <a href="usuarios.php" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      Gestión de Usuarios
+    </a>
   </div>
 
   <div class="sb-companies">
@@ -786,7 +785,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
                 $icon = $cdn_map[$sn] ?? $sn;
                 $local = "assets/images/logos/{$sn}.png";
                 $src   = file_exists($local) ? $local : "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/{$icon}.png";
-                $url   = "https://{$sn}.{$empresa['nombre']}.tensaas.es";
+                $url   = "http://192.168.1.147:" . $svc['puerto'];
               ?>
               <div class="service-card"
                    data-service-name="<?= htmlspecialchars($svc['nombre_servicio']) ?>"

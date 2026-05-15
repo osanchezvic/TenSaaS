@@ -35,8 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     $error = "Credenciales invalidas";
-}
-?>
 
 <!DOCTYPE html>
 <html>
@@ -44,13 +42,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Panel Login</title>
 </head>
 <body>
-    <h1>Login Panel</h1>
-    <?php if (isset($error)) echo "<p style='color:red'>$error</p>"; ?>
-    <form method="post">
+    <form method="post" id="loginForm">
         Empresa: <input type="text" name="empresa" required><br>
         Usuario: <input type="text" name="usuario" required><br>
-        Password: <input type="password" name="password" required><br>
+        Password: <input type="password" name="password" id="password" required>
+        <button type="button" onclick="togglePassword()">Ver</button><br>
         <button type="submit">Login</button>
     </form>
+    <script>
+        function togglePassword() {
+            var x = document.getElementById("password");
+            if (x.type === "password") { x.type = "text"; } else { x.type = "password"; }
+        }
+    </script>
+    <?php
+    if (isset($error)) echo "<p style='color:red'>$error</p>";
+    ?>
 </body>
 </html>

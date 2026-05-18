@@ -12,8 +12,6 @@ SERVICES=(
     "monitorizacion/prometheus"
     "monitorizacion/grafana"
     "proxy"
-    "watchtower"
-    "seguridad/fail2ban"
     "backups"
 )
 

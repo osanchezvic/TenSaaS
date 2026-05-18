@@ -1,7 +1,0 @@
-nombre: panel
-descripcion: Panel de autenticacion y dashboard para usuarios de empresa
-puerto_por_defecto: 8083
-icono: https://example.com/panel-icon.png
-volumenes:
-  - panel
-dependencias: []

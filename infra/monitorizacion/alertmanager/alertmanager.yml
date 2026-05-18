@@ -11,7 +11,7 @@ route:
 receivers:
 - name: 'telegram'
   telegram_configs:
-  - bot_token_file: '/run/secrets/telegram_token'
+  - bot_token: '7445586884:AAH9f7f89880e9e209e8c5fc4e3cd90518b'
     chat_id: -5274755868
     send_resolved: true
     parse_mode: 'HTML'

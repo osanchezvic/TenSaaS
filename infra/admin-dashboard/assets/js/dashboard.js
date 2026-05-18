@@ -181,7 +181,7 @@
 
       const corePrefixes = ['infra_', 'npm_'];
       const coreKeywords = ['proxy', 'prometheus', 'grafana', 'authelia', 'portainer',
-                            'watchtower', 'fail2ban', 'dashy', 'cloudflared', 'node_exporter', 'redis'];
+                            'cloudflared', 'node_exporter', 'redis'];
 
       const infra = containers.filter(c => {
         if (!c?.name) return false;

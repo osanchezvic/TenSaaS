@@ -207,23 +207,6 @@ services:
     networks:
       - infra_net
 
-  dashy:
-    image: lissy93/dashy:latest
-    container_name: dashy_portal
-    restart: unless-stopped
-    # PUERTO CERRADO: Acceso vía portal.tensaas.es
-    expose:
-      - "8080"
-    volumes:
-      - ./dashy/conf.yml:/app/public/conf.yml
-    networks:
-      - infra_net
-    healthcheck:
-      test: ["CMD", "node", "/app/services/healthcheck.js"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-
   redis:
     image: redis:alpine
     container_name: redis
@@ -233,50 +216,11 @@ services:
     networks:
       - infra_net
 
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower_global
-    restart: unless-stopped
-    environment:
-      - DOCKER_API_VERSION=1.40
-    healthcheck:
-      test: ["CMD", "/watchtower", "--version"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - infra_net
-
-  fail2ban:
-    image: crazymax/fail2ban:1.0.2
-    container_name: fail2ban_global
-    restart: unless-stopped
-    network_mode: host
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-    healthcheck:
-      test: ["CMD", "sh", "-c", "pgrep -f fail2ban-server >/dev/null"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    volumes:
-      - /var/log:/var/log:ro
-      - ./seguridad/fail2ban/jail.local:/etc/fail2ban/jail.local:ro
-      - fail2ban_data:/var/lib/fail2ban
-    environment:
-      - F2B_LOG_LEVEL=INFO
-      - F2B_DB_PURGE_AGE=30d
-
 volumes:
   portainer_data:
   prometheus_data:
   grafana_data:
   grafana_config:
-  fail2ban_data:
   redis_data:
 
 networks:

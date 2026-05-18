@@ -1,25 +1,41 @@
-# Registro de Remediación de Seguridad
+# Registro de Remediación de Seguridad y Hardening
 
-Este documento detalla las acciones realizadas para corregir las vulnerabilidades críticas detectadas en el proyecto.
+Este documento detalla las acciones realizadas para asegurar la plataforma y las tareas de endurecimiento (hardening) pendientes.
 
-## 📅 Fecha: 23 de abril de 2026
+## ✅ Acciones Realizadas (Actualizado: Mayo 2026)
 
-## ✅ Acciones Realizadas
+### 1. Gestión de Identidades y Acceso (IAM)
+- [x] **SSO con Authelia**: Implementación de Authelia como guardián de acceso para Grafana, Portainer y el Panel de Administración.
+- [x] **Seguridad 2FA**: Configuración de reglas en Authelia para exigir segundo factor de autenticación en rutas críticas.
+- [x] **Hashing Seguro**: Migración de contraseñas a hashes **Argon2id** (vía Authelia Crypto).
+- [x] **Rotación de Secretos**: Generación de nuevos `API_TOKEN` y contraseñas de BD eliminando valores por defecto.
 
-### 1. Gestión de Secretos y Hardening
-- [x] **Rotación de `API_TOKEN`**: Se ha generado un nuevo token seguro y se ha actualizado en `infra/.env` y `deploy_service.php`.
-- [x] **Rotación de secretos de Authelia y contraseñas de BD**: Se han actualizado los hashes de administrador en `users.yml` e `init.sql` eliminando credenciales por defecto.
-- [x] **Restricción de permisos en archivos `.env`**: Permisos cambiados a `600` para evitar lectura por otros usuarios.
+### 2. Seguridad en Aplicaciones y API
+- [x] **Sanitización de Entradas**: Implementación de Regex en la API (FastAPI) para validar nombres de empresa y servicio, evitando inyección de comandos.
+- [x] **Prepared Statements**: Uso estricto de sentencias preparadas en PHP para prevenir SQL Injection.
+- [x] **Tokens CSRF**: Validación de tokens en todas las peticiones POST del Dashboard.
+- [x] **Cierre de Servicios Innecesarios**: Eliminación de `dashy`, `fail2ban` y `watchtower` para reducir la superficie de ataque y simplificar la gestión.
 
-### 2. Seguridad en Aplicaciones Web
-- [x] **Corrección de Inyección SQL**: El archivo `catalogo/panel/index.php` ahora utiliza sentencias preparadas (`mysqli_prepare`).
-- [x] **Implementación de protección CSRF**: Se ha añadido validación de tokens en `infra/admin-dashboard/index.php` y `infra/admin-dashboard/deploy_service.php`.
-
-### 3. Integridad de Datos
-- [x] **Corrección del script de backup**: Se ha reescrito la lógica de `infra/backups/backup.sh` para usar un directorio temporal y evitar la sobrescritura del archivo final, asegurando que todos los volúmenes se guarden correctamente.
+### 3. Seguridad de Red y Docker
+- [x] **Aislamiento Multi-tenant**: Uso de redes bridge dedicadas por empresa, impidiendo que contenedores de distintos clientes se comuniquen entre sí.
+- [x] **Túnel de Cloudflare**: Exposición de servicios mediante `cloudflared`, ocultando la IP real del servidor y cerrando puertos de entrada directos.
+- [x] **Alertas de Seguridad**: Integración con Alertmanager y Telegram para notificaciones instantáneas de caídas de servicios.
 
 ---
-## 💡 Recomendaciones Adicionales (No implementadas por petición de foco en "Críticos")
-1. **Endurecimiento de Docker**: Cerrar los puertos expuestos (8000, 9000, 3000, 9090) y usar solo el proxy.
-2. **Socket de Docker**: Investigar alternativas como `docker-socket-proxy` para limitar privilegios de la API y Portainer.
-3. **Validación de Entradas**: Reforzar la validación de nombres de servicio en la API para evitar caracteres no deseados.
+
+## 🛠️ Tareas de Hardening Pendientes (Roadmap)
+
+### 1. Endurecimiento del Demonio de Docker (Prioridad: Alta)
+*   **Problema:** La API y Portainer montan `/var/run/docker.sock`, lo que otorga privilegios de root sobre el host.
+*   **Remediación:** Implementar `docker-socket-proxy` para filtrar las peticiones permitidas (solo lectura o acciones específicas) y limitar el acceso al socket.
+
+### 2. Segmentación de Red Interna (Prioridad: Media)
+*   **Problema:** Todos los servicios de infraestructura están en la misma red `infra_net`.
+*   **Remediación:** Separar la red de base de datos (`db_net`) de la red de la aplicación (`app_net`), permitiendo que solo el Dashboard y la API lleguen a MariaDB.
+
+### 3. Hardening de Cabeceras HTTP (Prioridad: Baja)
+*   **Problema:** Faltan cabeceras de seguridad (HSTS, CSP, X-Frame-Options) en algunas respuestas.
+*   **Remediación:** Configurar perfiles de seguridad globales en Nginx Proxy Manager.
+
+### 4. Escaneo de Vulnerabilidades (Prioridad: Media)
+*   **Remediación:** Integrar escaneo de imágenes de catálogo (vía Trivy o similar) antes de permitir su despliegue en producción.

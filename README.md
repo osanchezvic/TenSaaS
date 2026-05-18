@@ -1,77 +1,82 @@
 # 🚀 TenSaaS Multiempresa ASIR
 
-Plataforma de gestión SaaS automatizada y profesional diseñada para orquestar servicios basados en Docker en entornos multiempresa. Este sistema permite el despliegue centralizado, la observabilidad avanzada y la gestión de acceso segura para múltiples inquilinos.
+Plataforma de gestión SaaS automatizada para orquestar servicios basados en Docker en entornos multiempresa. Diseñada para ofrecer despliegue centralizado, seguridad avanzada y monitorización profesional.
 
-## 🏗️ Arquitectura y Seguridad de Alto Nivel
+## 🏗️ Arquitectura del Sistema
 
-El sistema ha sido diseñado bajo principios de **Security by Design** y **Observabilidad Total**:
+El sistema se basa en un modelo **Multi-Tenant** con aislamiento total:
 
-- **Aislamiento Multi-Tenant:** Cada empresa cuenta con su propio ecosistema de directorios, redes Docker aisladas y gestión de credenciales independiente.
-- **Blindaje de Código:**
-  - **Protección SQL:** Uso estricto de sentencias preparadas (Prepared Statements) para prevenir inyecciones.
-  - **Seguridad Web:** Protección contra ataques CSRF mediante tokens de sesión validados en cada acción crítica.
-- **Gestión de Infraestructura (IaC):**
-  - **API-driven:** Orquestación mediante una API segura (FastAPI) que actúa como puente entre la UI y los scripts de sistema.
-  - **Zero-Hardcoded Secrets:** Eliminación de credenciales por defecto en el código. Uso obligatorio de variables de entorno para tokens de API y contraseñas.
-- **Monitorización Proactiva:**
-  - **Alertmanager:** Sistema de alertas crítico integrado con **Telegram** para notificaciones en tiempo real.
-  - **Stack de Métricas:** Prometheus y Grafana para el control exhaustivo de recursos.
+- **Infraestructura Base:**
+  - **API (FastAPI):** Orquestador central que comunica el Dashboard con los scripts de sistema.
+  - **Admin Dashboard (PHP/JS):** Panel visual para gestionar empresas, usuarios y despliegues.
+  - **Reverse Proxy (Nginx Proxy Manager):** Gestión de certificados SSL y exposición de servicios.
+  - **Autenticación (Authelia + Redis):** Seguridad centralizada (SSO) y protección 2FA para paneles críticos.
+  - **Monitorización (Prometheus + Grafana):** Control de métricas y salud del sistema.
+  - **Alertas (Alertmanager):** Notificaciones integradas con **Telegram**.
+
+- **Aislamiento Multi-Empresa:**
+  - Cada empresa tiene su propia red Docker aislada (`{empresa}_net`).
+  - Almacenamiento persistente dedicado en `data/{empresa}/{servicio}`.
+  - Gestión independiente de credenciales en `scripts/databases/credentials`.
 
 ## 📁 Estructura del Proyecto
 
 ```text
 /
-├── catalogo/        # Plantillas (.tpl) de servicios listos para SaaS
-├── infra/           # Servicios globales (Proxy, API, Monitorización, Dashboards)
-│   ├── api/         # Backend de automatización (FastAPI)
-│   ├── admin-dashboard/ # Panel de administración visual (PHP/JS)
-│   └── monitorizacion/ # Stack Prometheus, Grafana y Alertmanager
-├── scripts/         # Motor de orquestación en Bash
-│   ├── funciones/   # Módulos de lógica (DB, Puertos, Seguridad, NPM)
-│   └── deploy.sh    # Script inteligente de despliegue con gestión de dependencias
-├── data/            # Almacenamiento persistente aislado por empresa
-├── docs/            # Diagramas de arquitectura y guías técnicas
-└── README.md        # Documentación principal
+├── catalogo/           # Plantillas (.tpl) de servicios (WordPress, MariaDB, Nextcloud, etc.)
+├── infra/              # Servicios globales de infraestructura
+│   ├── api/            # Backend de automatización (FastAPI)
+│   ├── admin-dashboard/# Panel de administración (PHP/JS)
+│   ├── monitorizacion/ # Stack de observabilidad (Prometheus, Grafana, Alertmanager)
+│   ├── proxy/          # Nginx Proxy Manager y configuración de Authelia
+│   ├── users-db/       # Base de datos central de usuarios y empresas
+│   └── authelia/       # Configuración de Single Sign-On y 2FA
+├── scripts/            # Motor de orquestación en Bash
+│   ├── funciones/      # Módulos de lógica (DB, Puertos, Seguridad, NPM)
+│   ├── deploy.sh       # Script inteligente de despliegue con dependencias
+│   └── destroy.sh      # Script de eliminación segura de servicios
+├── data/               # Almacenamiento persistente aislado por empresa
+└── docs/               # Guías técnicas y documentación de seguridad
 ```
 
-## ✨ Características del "10" (Valor Añadido)
+## ✨ Características Principales
 
-1. **Orquestador con Dependencias:** El sistema detecta automáticamente si un servicio (ej. WordPress) requiere otro (ej. MariaDB) y lo despliega de forma autónoma.
-2. **Dashboard Admin Moderno:** Interfaz profesional rediseñada con **Glassmorphism** y actualización en tiempo real mediante Fetch API para la gestión de despliegues.
-3. **Portal Dashy:** Punto de entrada visual que monitoriza la salud de los servicios en tiempo real con indicadores de estado.
-4. **Sistema de Alertas:** Notificaciones automáticas al móvil si un contenedor cae o si hay un consumo excesivo de CPU/RAM.
-5. **Backups Garantizados:** Script de respaldo mejorado que asegura la integridad total de los volúmenes antes de cualquier cambio.
+1.  **Despliegue Inteligente:** Orquestador que detecta y despliega dependencias automáticamente.
+2.  **Dashboard Moderno:** Interfaz con actualización en tiempo real mediante Fetch API.
+3.  **Seguridad por Diseño:**
+    *   Protección contra Inyección SQL (Prepared Statements).
+    *   Protección CSRF en todas las acciones críticas.
+    *   Aislamiento de redes Docker por tenant.
+    *   Gestión de secretos mediante variables de entorno (Zero Hardcoded Secrets).
+4.  **Observabilidad:** Paneles de Grafana preconfigurados y alertas automáticas a Telegram.
+5.  **Single Sign-On (SSO):** Acceso unificado mediante Authelia para todos los paneles administrativos.
 
-## 🚀 Instalación y Configuración Segura
+## 🚀 Instalación y Despliegue
 
-Este proyecto utiliza variables de entorno para gestionar secretos. **Nunca** subas archivos `.env` reales a un repositorio público.
+### 1. Preparación del Entorno
+Copia las plantillas de configuración y define tus secretos:
+```bash
+cp .env.example .env
+cp .env infra/.env
+cp scripts/config.env.example scripts/config.env
+```
+*Edita `.env` con valores seguros (API_TOKEN, DB_PASSWORD, TELEGRAM_BOT_TOKEN, etc.).*
 
-### Pasos para el despliegue
+### 2. Levantar Infraestructura
+```bash
+cd infra
+./deploy-infra.sh start
+```
 
-1. **Configurar Secretos:**
-   Copia las plantillas de configuración y rellena tus credenciales (Tokens de API, Passwords de DB, etc.):
-   ```bash
-   cp .env.example .env
-   cp .env infra/.env
-   cp scripts/config.env.example scripts/config.env
-   ```
-   *Edita `.env` con valores seguros antes de proceder.*
-
-2. **Levantar la Infraestructura Base:**
-   ```bash
-   cd infra
-   docker compose up -d
-   ```
-
-3. **Acceso a los Paneles:**
-   - **Admin Dashboard:** `https://panel.tensaas.es` (Gestionado por Nginx Proxy Manager + Cloudflare)
-   - **Monitorización:** `https://grafana.tensaas.es`
-   - **Portal Dashy:** `https://portal.tensaas.es`
+### 3. Acceso a los Servicios
+- **Dashboard:** `https://panel.tensaas.es`
+- **Grafana:** `https://grafana.tensaas.es`
+- **Nginx Proxy Manager:** `http://localhost:81`
 
 ---
 
 ## 🔒 Seguridad Implementada
-- **Zero Secrets in Git:** Eliminación de credenciales hardcodeadas en favor de variables de entorno.
-- **Acceso Restringido:** Puertos administrativos (NPM) limitados a `127.0.0.1`.
-- **Validación de Entradas:** Saneamiento de parámetros en la API para prevenir inyección de comandos.
-- **Aislamiento Docker:** Redes independientes por cada inquilino (tenant).
+- **Zero Secrets in Git:** Uso exclusivo de variables de entorno para credenciales.
+- **Acceso Restringido:** Puertos administrativos limitados y exposición vía túnel de Cloudflare.
+- **Validación Estricta:** Saneamiento de entradas en API y scripts para prevenir inyección de comandos.
+- **Protección de Datos:** Copias de seguridad automáticas antes de modificaciones críticas.

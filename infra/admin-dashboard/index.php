@@ -66,6 +66,23 @@ if (isset($_GET['action'])) {
         }
         echo $resp; exit;
     }
+
+    if ($_GET['action'] === 'delete_company' && isset($_GET['empresa'])) {
+        $token = getenv('API_TOKEN');
+        if (!$token) { echo json_encode(['status' => 'error', 'message' => 'API_TOKEN not configured']); exit; }
+        $ch = curl_init('http://infra_api:8000/delete_company/' . urlencode($_GET['empresa']));
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_HTTPHEADER => ['token: ' . $token]]);
+        $resp = curl_exec($ch); curl_close($ch);
+        $d = json_decode($resp, true);
+        if (($d['status'] ?? '') === 'success') {
+            // Eliminar de la base de datos MySQL
+            $sql  = "DELETE FROM empresas WHERE nombre=?";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, 's', $_GET['empresa']);
+            mysqli_stmt_execute($stmt);
+        }
+        echo $resp; exit;
+    }
 }
 
 /* ── CATÁLOGO ─────────────────────────────────────────────── */
@@ -404,6 +421,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .btn-deploy:hover{background:rgba(56,189,248,.18)}
 .btn-deploy svg{width:12px;height:12px}
 
+.btn-delete-co{
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;background:rgba(251,113,133,.08);
+  border:1px solid rgba(251,113,133,.2);border-radius:7px;
+  color:var(--danger);cursor:pointer;transition:background .15s, border-color .15s;
+  flex-shrink:0;
+}
+.btn-delete-co:hover{background:rgba(251,113,133,.15);border-color:rgba(251,113,133,.4)}
+.btn-delete-co svg{width:14px;height:14px}
+
 /* ── SERVICE GRID ────────────────────────────────────────── */
 .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1px;background:var(--border)}
 
@@ -536,6 +563,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <body>
 
 <!-- ── SIDEBAR ──────────────────────────────────────────── -->
+<?php if ($_SESSION['es_admin'] == 1): ?>
 <aside class="sidebar">
   <div class="sb-top">
     <div class="brand-row">
@@ -643,11 +671,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
 </aside>
+<?php endif; ?>
 
 <!-- ── MAIN ─────────────────────────────────────────────── -->
 <main class="main">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:.875rem">
+      <?php if ($_SESSION['es_admin'] != 1): ?>
+        <div class="brand-ico" style="width:30px;height:30px">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        </div>
+      <?php endif; ?>
       <h1 class="page-title">Centro de Mando</h1>
     </div>
     <div class="topbar-right">
@@ -655,6 +689,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <button onclick="Dashboard.updateAll()" class="icon-btn" title="Refrescar">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
       </button>
+      <?php if ($_SESSION['es_admin'] != 1): ?>
+        <button onclick="toggleTheme()" class="icon-btn" title="Tema">
+          <svg id="sun-icon-top" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+          <svg id="moon-icon-top" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+        <a href="?logout=1" class="icon-btn" title="Salir">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </a>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -766,10 +809,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
                 <div class="co-desc"><?= htmlspecialchars($empresa['descripcion'] ?? '') ?></div>
               </div>
             </div>
-            <button class="btn-deploy" onclick="openModal('<?= htmlspecialchars(addslashes($empresa['nombre'])) ?>')">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-              Desplegar
-            </button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <?php if ($_SESSION['es_admin'] == 1): ?>
+              <button class="btn-deploy" onclick="openModal('<?= htmlspecialchars(addslashes($empresa['nombre'])) ?>')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                Desplegar
+              </button>
+              <button class="btn-delete-co" onclick="Dashboard.deleteCompany('<?= htmlspecialchars(addslashes($empresa['nombre'])) ?>')" title="Eliminar Empresa">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+              <?php endif; ?>
+            </div>
           </div>
 
           <?php if (empty($servicios_por_empresa[$empresa['id']])): ?>
@@ -785,7 +835,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
                 $icon = $cdn_map[$sn] ?? $sn;
                 $local = "assets/images/logos/{$sn}.png";
                 $src   = file_exists($local) ? $local : "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/{$icon}.png";
-                $url   = "http://192.168.1.147:" . $svc['puerto'];
+                
+                // Generar URL pública basada en el subdominio (ej: wordpress-btravel.tensaas.es)
+                $co_clean = strtolower($empresa['nombre']);
+                $url      = "https://{$sn}-{$co_clean}.tensaas.es";
               ?>
               <div class="service-card"
                    data-service-name="<?= htmlspecialchars($svc['nombre_servicio']) ?>"
@@ -808,11 +861,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                     Abrir
                   </a>
+                  <?php if ($_SESSION['es_admin'] == 1): ?>
                   <button class="btn-del"
                     onclick="Dashboard.destroyService('<?= htmlspecialchars(addslashes($empresa['nombre'])) ?>','<?= htmlspecialchars(addslashes($svc['nombre_servicio'])) ?>')"
                     title="Eliminar">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
+                  <?php endif; ?>
                 </div>
               </div>
               <?php endforeach; ?>
@@ -821,11 +876,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         </div>
 
         <!-- Hidden form (used by dashboard.js bindEvents) -->
+        <?php if ($_SESSION['es_admin'] == 1): ?>
         <form class="deploy-form hidden" data-empresa="<?= htmlspecialchars($empresa['nombre']) ?>">
           <input type="hidden" name="empresa" value="<?= htmlspecialchars($empresa['nombre']) ?>">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
           <input type="hidden" name="servicio" class="svc-input">
         </form>
+        <?php endif; ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -838,6 +895,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 </main>
 
 <!-- ── DEPLOY MODAL ──────────────────────────────────────── -->
+<?php if ($_SESSION['es_admin'] == 1): ?>
 <div class="overlay" id="deploy-overlay">
   <div class="modal">
     <div class="modal-title" id="modal-title">Desplegar servicio</div>
@@ -850,6 +908,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
 </div>
+<?php endif; ?>
 
 <script>
 /* ── THEME ───────────────────────────────────────────────── */
@@ -873,6 +932,8 @@ function updateThemeUI(){
   const l=document.documentElement.classList.contains('light');
   document.getElementById('sun-icon')?.classList.toggle('hidden',!l);
   document.getElementById('moon-icon')?.classList.toggle('hidden',l);
+  document.getElementById('sun-icon-top')?.classList.toggle('hidden',!l);
+  document.getElementById('moon-icon-top')?.classList.toggle('hidden',l);
 }
 window.Dashboard=window.Dashboard||{};
 window.Dashboard.toggleTheme=toggleTheme;
@@ -941,7 +1002,7 @@ document.getElementById('modal-ok').onclick=async()=>{
 };
 </script>
 
-<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/dashboard.js?v=<?= time() ?>"></script>
 </body>
 </html>
 <?php mysqli_close($conn); ?>

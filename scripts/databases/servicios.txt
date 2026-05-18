@@ -14,3 +14,12 @@ fruteria:wordpress:8112:running
 panaderia:prestashop:8113:running
 btravel:mariadb:8114:running
 btravel:wordpress:8115:running
+panaderia:nextcloud:8107:running
+testco:redis:8116:running
+btravel:prestashop:8117:running
+btravel:nextcloud:8118:running
+btravel:zabbix:8119:running
+testco:zabbix:8120:running
+panaderia:uptime-kuma:8121:running
+testco:test-svc:8121:running
+testco:vaultwarden:8122:running

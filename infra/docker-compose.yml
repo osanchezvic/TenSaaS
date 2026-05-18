@@ -160,6 +160,17 @@ services:
     expose:
       - 9091
 
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    expose:
+      - "9093"
+    volumes:
+      - ./monitorizacion/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - infra_net
+
   api:
     build: ./api
     container_name: infra_api

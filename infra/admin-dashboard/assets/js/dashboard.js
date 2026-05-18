@@ -384,6 +384,24 @@
       }
     },
 
+    /* ── DELETE COMPANY ──────────────────────────────────── */
+    async deleteCompany(empresa) {
+      if (!confirm(`¿ELIMINAR COMPLETAMENTE la empresa "${empresa}" y TODOS sus servicios? Esta acción es IRREVERSIBLE.`)) return;
+      this.showNotification('Procesando', `Eliminando empresa ${empresa}...`, 'info');
+      try {
+        const r = await fetch(`?action=delete_company&empresa=${encodeURIComponent(empresa)}`);
+        const d = await r.json();
+        if (d.status === 'success') {
+          this.showNotification('Eliminado', 'La empresa ha sido eliminada del sistema.', 'success');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          this.showNotification('Error', d.message || 'No se pudo eliminar la empresa', 'error');
+        }
+      } catch {
+        this.showNotification('Error', 'Error de red', 'error');
+      }
+    },
+
     /* ── NOTIFICATIONS ───────────────────────────────────── */
     showNotification(title, message, type = 'info') {
       const palette = {
@@ -400,27 +418,45 @@
       };
       const p = palette[type] || palette.info;
 
+      // Toast Container
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = `position:fixed;bottom:1.25rem;right:1.25rem;z-index:9999;
+          display:flex;flex-direction:column;gap:0.5rem;pointer-events:none`;
+        document.body.appendChild(container);
+      }
+
       if (!document.getElementById('toast-kf')) {
         const s = document.createElement('style');
         s.id = 'toast-kf';
-        s.textContent = '@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}';
+        s.textContent = '@keyframes toast-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}';
         document.head.appendChild(s);
       }
 
       const el = document.createElement('div');
-      el.style.cssText = `position:fixed;bottom:1.25rem;right:1.25rem;z-index:9999;
-        display:flex;align-items:center;gap:.625rem;padding:.75rem 1rem;border-radius:10px;
-        max-width:300px;background:${p.bg};border:1px solid ${p.border};color:${p.color};
-        font-family:'DM Sans',sans-serif;font-size:12.5px;
-        box-shadow:0 8px 32px rgba(0,0,0,.35);animation:toast-in .22s ease`;
+      el.style.cssText = `display:flex;align-items:center;gap:.625rem;padding:.75rem 1rem;border-radius:10px;
+        width:280px;background:${p.bg};border:1px solid ${p.border};color:${p.color};
+        font-family:'DM Sans',sans-serif;font-size:12.5px;pointer-events:auto;
+        box-shadow:0 8px 32px rgba(0,0,0,.35);animation:toast-in .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)`;
+      
       el.innerHTML = `
         <svg style="width:15px;height:15px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icons[type]||icons.info}</svg>
-        <div>
+        <div style="flex:1">
           <div style="font-weight:600;line-height:1.2">${title}</div>
           <div style="opacity:.75;font-size:11px;margin-top:2px">${message}</div>
         </div>`;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 4500);
+
+      container.appendChild(el);
+      
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(20px)';
+        el.style.transition = 'all 0.3s ease';
+        setTimeout(() => el.remove(), 300);
+      }, 4000);
     },
   };
 

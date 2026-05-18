@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['admin'])) { header("Location: index.php"); exit; }
+if (!isset($_SESSION['admin']) || $_SESSION['es_admin'] != 1) { header("Location: index.php"); exit; }
 
 $db_host = getenv('DB_HOST') ?: 'infra_users_db';
 $db_name = getenv('DB_NAME') ?: 'users_db';
@@ -12,22 +12,77 @@ $conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
 
 mysqli_set_charset($conn, "utf8mb4");
 
+/* ── FUNCIONES DE SINCRONIZACIÓN ─────────────────────────── */
+function syncWithAuthelia($u, $p, $ea, $email = null) {
+    $api_token = getenv('API_TOKEN');
+    if (!$api_token) return false;
+    
+    $url = 'http://infra_api:8000/auth/sync_user';
+    $data = [
+        'username'     => $u,
+        'password'     => $p,
+        'display_name' => $u,
+        'email'        => $email ?: "{$u}@tensaas.es",
+        'groups'       => $ea ? ['admins', 'users'] : ['users']
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'token: ' . $api_token,
+        'Content-Type: application/json'
+    ]);
+    
+    $resp = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($resp, true);
+}
+
+function removeFromAuthelia($u) {
+    $api_token = getenv('API_TOKEN');
+    if (!$api_token) return false;
+    
+    $url = 'http://infra_api:8000/auth/remove_user/' . urlencode($u);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['token: ' . $api_token]);
+    
+    $resp = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($resp, true);
+}
+
 $flash = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_usuario'])) {
     $u  = trim($_POST['usuario']  ?? '');
     $p  = $_POST['password']      ?? '';
+    $em = trim($_POST['email']    ?? '');
     $ei = (int)($_POST['empresa_id'] ?? 0);
     $ea = (int)($_POST['es_admin']   ?? 0);
 
     if ($u && $p && $ei) {
-        $hash = password_hash($p, PASSWORD_BCRYPT);
-        $st   = mysqli_prepare($conn, "INSERT INTO usuarios (usuario, hash_password, empresa_id, es_admin, estado) VALUES (?, ?, ?, ?, 'activo')");
-        mysqli_stmt_bind_param($st, 'ssii', $u, $hash, $ei, $ea);
-        if (mysqli_stmt_execute($st)) {
-            $flash = ['type' => 'success', 'msg' => "Usuario «{$u}» creado correctamente."];
-        } else {
-            $flash = ['type' => 'error', 'msg' => 'Error al crear el usuario: ' . mysqli_error($conn)];
+        try {
+            $hash = password_hash($p, PASSWORD_BCRYPT);
+            $st   = mysqli_prepare($conn, "INSERT INTO usuarios (usuario, hash_password, email, empresa_id, es_admin, estado) VALUES (?, ?, ?, ?, ?, 'activo')");
+            mysqli_stmt_bind_param($st, 'sssii', $u, $hash, $em, $ei, $ea);
+            if (mysqli_stmt_execute($st)) {
+                $flash = ['type' => 'success', 'msg' => "Usuario «{$u}» creado correctamente."];
+                // Sincronizar con Authelia vía API
+                syncWithAuthelia($u, $p, $ea, $em);
+            } else {
+                $flash = ['type' => 'error', 'msg' => 'Error al crear el usuario: ' . mysqli_error($conn)];
+            }
+        } catch (mysqli_sql_exception $e) {
+            if ($e->getCode() == 1062) {
+                $flash = ['type' => 'error', 'msg' => "El usuario «{$u}» ya existe."];
+            } else {
+                $flash = ['type' => 'error', 'msg' => 'Error de base de datos: ' . $e->getMessage()];
+            }
         }
     } else {
         $flash = ['type' => 'error', 'msg' => 'Todos los campos son obligatorios.'];
@@ -37,12 +92,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_usuario'])) {
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     if ($id !== (int)$_SESSION['admin_id']) {
-        $st = mysqli_prepare($conn, "UPDATE usuarios SET estado='inactivo' WHERE id=?");
+        // Obtener el nombre de usuario antes de borrarlo para quitarlo de Authelia
+        $st_u = mysqli_prepare($conn, "SELECT usuario FROM usuarios WHERE id=?");
+        mysqli_stmt_bind_param($st_u, 'i', $id);
+        mysqli_stmt_execute($st_u);
+        $u_row = mysqli_fetch_assoc(mysqli_stmt_get_result($st_u));
+
+        $st = mysqli_prepare($conn, "DELETE FROM usuarios WHERE id=?");
         mysqli_stmt_bind_param($st, 'i', $id);
         mysqli_stmt_execute($st);
-        $flash = ['type' => 'success', 'msg' => 'Usuario desactivado correctamente.'];
+        $flash = ['type' => 'success', 'msg' => 'Usuario eliminado correctamente.'];
+
+        if ($u_row) removeFromAuthelia($u_row['usuario']);
     } else {
-        $flash = ['type' => 'error', 'msg' => 'No puedes desactivar tu propia cuenta.'];
+        $flash = ['type' => 'error', 'msg' => 'No puedes eliminar tu propia cuenta.'];
     }
 }
 
@@ -182,7 +245,7 @@ body::before{content:'';position:fixed;inset:0;
 .form-card-head svg{width:14px;height:14px;color:var(--accent)}
 .form-card-head span{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2)}
 .form-body{padding:1.125rem 1.25rem}
-.form-grid{display:grid;grid-template-columns:1fr 1fr 1.4fr auto auto;gap:.625rem;align-items:end}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto auto;gap:.625rem;align-items:end}
 .field-group{display:flex;flex-direction:column;gap:4px}
 .field-label{font-family:var(--fm);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .field-input{
@@ -379,6 +442,10 @@ body::before{content:'';position:fixed;inset:0;
             <input type="password" name="password" class="field-input" placeholder="••••••••" required autocomplete="new-password">
           </div>
           <div class="field-group">
+            <label class="field-label">Email</label>
+            <input type="email" name="email" class="field-input" placeholder="user@empresa.es" required>
+          </div>
+          <div class="field-group">
             <label class="field-label">Empresa</label>
             <select name="empresa_id" class="field-input field-select" required>
               <option value="">Seleccionar empresa...</option>
@@ -391,7 +458,7 @@ body::before{content:'';position:fixed;inset:0;
             <label class="field-label">Rol</label>
             <label class="toggle-wrap">
               <input type="checkbox" name="es_admin" value="1">
-              <span>Administrador</span>
+              <span>Admin</span>
             </label>
           </div>
           <div class="field-group">

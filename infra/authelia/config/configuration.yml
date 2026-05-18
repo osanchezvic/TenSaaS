@@ -56,12 +56,12 @@ access_control:
       subject: "group:users"
       policy: one_factor
 
-    - domain: ["btravel.tensaas.es", "*.btravel.tensaas.es"]
+    - domain: ["btravel.tensaas.es", "*.btravel.tensaas.es", "prestashop-btravel.tensaas.es"]
       subject: "group:users"
       policy: one_factor
 
 totp:
-  issuer: ASIR_SaaS
+  issuer: TenSaaS
 
 regulation:
   max_retries: 3

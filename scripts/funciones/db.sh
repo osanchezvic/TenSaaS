@@ -17,14 +17,14 @@ db_register_empresa() {
     # Determinar método de acceso a BD
     if [ -f /.dockerenv ]; then
         # Estamos dentro de un contenedor
-        mysql -h infra_users_db -u users_user -p$INFRA_DB_PASSWORD users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || true
+        mysql --skip-ssl -h infra_users_db -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');"
     else
         # Estamos en el host, intentamos docker exec primero (más fiable)
         if docker ps | grep -q infra_users_db; then
-            docker exec infra_users_db mysql -u users_user -p$INFRA_DB_PASSWORD users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || \
-            mysql -h localhost -P 3307 -u users_user -p$INFRA_DB_PASSWORD users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || true
+            docker exec infra_users_db mysql --skip-ssl -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" || \
+            mysql --skip-ssl -h localhost -P 3307 -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');"
         else
-            mysql -h localhost -P 3307 -u users_user -p$INFRA_DB_PASSWORD users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');" 2>/dev/null || true
+            mysql --skip-ssl -h localhost -P 3307 -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "INSERT IGNORE INTO empresas (nombre) VALUES ('$empresa');"
         fi
     fi
 }
@@ -49,13 +49,13 @@ db_register_servicio() {
     "
 
     if [ -f /.dockerenv ]; then
-        mysql -h infra_users_db -u users_user -p$INFRA_DB_PASSWORD users_db -e "$sql_query" 2>/dev/null || true
+        mysql --skip-ssl -h infra_users_db -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "$sql_query"
     else
         if docker ps | grep -q infra_users_db; then
-            docker exec infra_users_db mysql -u users_user -p$INFRA_DB_PASSWORD users_db -e "$sql_query" 2>/dev/null || \
-            mysql -h localhost -P 3307 -u users_user -p$INFRA_DB_PASSWORD users_db -e "$sql_query" 2>/dev/null || true
+            docker exec infra_users_db mysql --skip-ssl -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "$sql_query" || \
+            mysql --skip-ssl -h localhost -P 3307 -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "$sql_query"
         else
-            mysql -h localhost -P 3307 -u users_user -p$INFRA_DB_PASSWORD users_db -e "$sql_query" 2>/dev/null || true
+            mysql --skip-ssl -h localhost -P 3307 -u users_user -p"$INFRA_DB_PASSWORD" users_db -e "$sql_query"
         fi
     fi
 }

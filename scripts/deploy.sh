@@ -189,6 +189,14 @@ log_info "Levantando contenedores..."
 cd "$SERVICIO_DIR"
 docker compose up -d 2>&1 | tee -a "$LOG_FILE"
 
+# Conectar a la red global de proxy para exposición segura
+if [ "$(docker network ls -q -f name=infra_proxy_net)" ]; then
+    CONTENEDOR_PRINCIPAL="${EMPRESA}_${SERVICIO}"
+    # Intentar conectar el contenedor (si no tiene -1, -2 al final)
+    docker network connect infra_proxy_net "$CONTENEDOR_PRINCIPAL" 2>/dev/null || \
+    docker network connect infra_proxy_net "${CONTENEDOR_PRINCIPAL}-1" 2>/dev/null || true
+fi
+
 # =====================================================
 # AUTOMATIZACIÓN NPM
 # =====================================================
@@ -196,11 +204,12 @@ docker compose up -d 2>&1 | tee -a "$LOG_FILE"
 source "$SCRIPT_PATH/funciones/npm.sh"
 log_info "Configurando Proxy NPM..."
 TOKEN=$(npm_get_token || echo "")
-SUBDOMAIN="${SERVICIO}.${EMPRESA}.tensaas.es"
+SUBDOMAIN="${SERVICIO}-${EMPRESA}.tensaas.es"
 URL_ACCESO="https://$SUBDOMAIN"
 
 if [ -n "$TOKEN" ]; then
-    npm_add_proxy "$SUBDOMAIN" "${EMPRESA}_${SERVICIO}-1" "$PUERTO" "$NPM_CERT_ID" "$TOKEN" || URL_ACCESO="http://localhost:$PUERTO"
+    # Usar puerto 80 (interno del contenedor) para NPM, ya que la comunicación es vía red Docker
+    npm_add_proxy "$SUBDOMAIN" "${EMPRESA}_${SERVICIO}" "80" "$NPM_CERT_ID" "$TOKEN" || URL_ACCESO="http://localhost:$PUERTO"
 else
     URL_ACCESO="http://localhost:$PUERTO"
 fi

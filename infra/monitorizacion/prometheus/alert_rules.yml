@@ -27,3 +27,30 @@ groups:
     annotations:
       summary: "Alta carga de Memoria en {{ $labels.instance }}"
       description: "El uso de RAM es superior al 90%."
+
+  - alert: LowDiskSpace
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"} < 15
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Espacio en disco bajo en {{ $labels.instance }}"
+      description: "Queda menos del 15% de espacio libre en la partición raíz."
+
+  - alert: DiskWillFillIn24Hours
+    expr: predict_linear(node_filesystem_free_bytes{mountpoint="/"}[1h], 24 * 3600) < 0
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      summary: "Disco lleno inminente en {{ $labels.instance }}"
+      description: "Basado en el ritmo actual, el disco se llenará en menos de 24 horas."
+
+  - alert: HighSystemLoad
+    expr: node_load5 > 2.0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Sistema saturado en {{ $labels.instance }}"
+      description: "La carga media (Load Average) es demasiado alta para el número de CPUs disponibles."

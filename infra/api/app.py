@@ -72,6 +72,98 @@ async def deploy(company: str, service: str, token: str = Header(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 import json
+import yaml
+
+USERS_YML_PATH = os.path.join(PROJECT_ROOT, "infra/authelia/config/users.yml")
+
+@app.post("/auth/sync_user")
+async def sync_user(request: Request, token: str = Header(...)):
+    verify_token(token)
+    try:
+        data = await request.json()
+    except:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+        
+    username = data.get("username")
+    password = data.get("password")
+    display_name = data.get("display_name")
+    email = data.get("email")
+    groups = data.get("groups", ["users"])
+    
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+
+    # Generar Hash usando el propio Authelia para compatibilidad total
+    try:
+        logger.info(f"Generando hash para usuario: {username}")
+        cmd = [
+            "docker", "run", "--rm", "authelia/authelia:latest", 
+            "authelia", "crypto", "hash", "generate", "argon2", "--password", password
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            logger.error(f"Fallo comando docker authelia: {result.stderr}")
+            raise Exception(f"Fallo al generar hash: {result.stderr}")
+        
+        if "Digest: " not in result.stdout:
+            logger.error(f"Salida inesperada de authelia: {result.stdout}")
+            raise Exception("No se encontró el Digest en la salida de Authelia")
+            
+        digest = result.stdout.split("Digest: ")[1].strip()
+        logger.info(f"Hash generado con éxito para {username}")
+    except Exception as e:
+        logger.error(f"Error generando hash Argon2: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al generar hash de contraseña: {str(e)}")
+
+    # Actualizar users.yml
+    try:
+        config = {"users": {}}
+        if os.path.exists(USERS_YML_PATH):
+            with open(USERS_YML_PATH, 'r') as f:
+                config = yaml.safe_load(f) or {"users": {}}
+        
+        if "users" not in config:
+            config["users"] = {}
+            
+        config["users"][username] = {
+            "displayname": display_name or username,
+            "password": digest,
+            "email": email or f"{username}@tensaas.es",
+            "groups": groups
+        }
+        
+        with open(USERS_YML_PATH, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
+            
+        # Reiniciar Authelia para aplicar cambios
+        subprocess.run(["docker", "restart", "authelia"], capture_output=True)
+        
+        return {"status": "success", "message": f"Usuario {username} sincronizado con Authelia"}
+    except Exception as e:
+        logger.error(f"Error actualizando users.yml: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al actualizar configuración de Authelia: {str(e)}")
+
+@app.post("/auth/remove_user/{username}")
+async def remove_user(username: str, token: str = Header(...)):
+    verify_token(token)
+    try:
+        if not os.path.exists(USERS_YML_PATH):
+            return {"status": "success", "message": "No users.yml found"}
+            
+        with open(USERS_YML_PATH, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        if config and "users" in config and username in config["users"]:
+            del config["users"][username]
+            with open(USERS_YML_PATH, 'w') as f:
+                yaml.dump(config, f, default_flow_style=False)
+            subprocess.run(["docker", "restart", "authelia"], capture_output=True)
+            return {"status": "success", "message": f"Usuario {username} eliminado de Authelia"}
+        
+        return {"status": "success", "message": f"El usuario {username} no existía en Authelia"}
+    except Exception as e:
+        logger.error(f"Error eliminando usuario: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al actualizar configuración de Authelia: {str(e)}")
 
 @app.get("/api/v1/system/status")
 async def system_status(token: str = Header(...)):
@@ -129,6 +221,40 @@ async def destroy(company: str, service: str, token: str = Header(...)):
         return {"status": "success", "message": "Service destroyed"}
     except Exception as e:
         logger.error(f"Excepción durante la destrucción: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/delete_company/{company}")
+async def delete_company(company: str, token: str = Header(...)):
+    verify_token(token)
+    validate_input(company)
+    logger.info(f"Iniciando eliminación completa de empresa: {company}")
+
+    delete_script = os.path.join(PROJECT_ROOT, "scripts/delete_company.sh")
+
+    if not os.path.exists(delete_script):
+        logger.error(f"Script no encontrado: {delete_script}")
+        raise HTTPException(status_code=500, detail="Delete company script not found")
+
+    try:
+        result = subprocess.run(
+            [delete_script, company], 
+            capture_output=True, 
+            text=True,
+            env={**os.environ, "FORCE_MODE": "1"}
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"Error en el script de eliminación de empresa: {result.stderr}")
+            return {
+                "status": "error",
+                "message": "Company deletion failed",
+                "stderr": result.stderr,
+                "stdout": result.stdout
+            }
+            
+        return {"status": "success", "message": "Company deleted"}
+    except Exception as e:
+        logger.error(f"Excepción durante la eliminación de empresa: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/status/{company}")

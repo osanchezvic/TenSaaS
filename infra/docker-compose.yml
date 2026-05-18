@@ -168,6 +168,9 @@ services:
       - "9093"
     volumes:
       - ./monitorizacion/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     networks:
       - infra_net
 

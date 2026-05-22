@@ -226,7 +226,7 @@ Se ha aplicado una política de **reducción de superficie de ataque** en todas 
 ### 1. Clonar el repositorio
  
 ```bash
-git clone https://github.com/osanchezvic/SaaS-multiempresa-ASIR.git
+git clone https://github.com/osanchezvic/TenSaaS.git
 cd SaaS-multiempresa-ASIR
 ```
  

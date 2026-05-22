@@ -17,6 +17,34 @@ $DB_DIR = "/var/www/scripts/databases";
 /* ── API ACTIONS ──────────────────────────────────────────── */
 if (isset($_GET['action'])) {
     header('Content-Type: application/json');
+
+    // Acción pública para el formulario de contacto
+    if ($_GET['action'] === 'contact') {
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: POST, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(200);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $json = file_get_contents('php://input');
+            $ch = curl_init('http://infra_api:8000/contact');
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $json,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json']
+            ]);
+            $resp = curl_exec($ch);
+            curl_close($ch);
+            echo $resp;
+            exit;
+        }
+    }
+
     if (!isset($_SESSION['admin'])) { echo json_encode(['error' => 'Unauthorized']); exit; }
 
     if ($_GET['action'] === 'get_metrics') {
@@ -121,6 +149,8 @@ if (!isset($_SESSION['admin'])) {
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TenSaaS — Acceso</title>
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="icon" type="image/x-icon" href="images/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -162,7 +192,7 @@ h1{font-family:var(--fh);font-size:1.85rem;font-weight:800;letter-spacing:-.03em
 <div class="card">
   <div class="brand">
     <div class="logo-wrap">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      <img src="images/favicon.svg" alt="TenSaaS" style="width:26px;height:26px">
     </div>
     <h1>TenSaaS</h1>
     <div class="sub">INFRASTRUCTURE CONTROL PLANE</div>
@@ -225,6 +255,8 @@ $hues = [199, 142, 265, 25, 340, 39, 180, 310];
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TenSaaS — Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="icon" type="image/x-icon" href="images/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -568,7 +600,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="sb-top">
     <div class="brand-row">
       <div class="brand-ico">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <img src="images/favicon.svg" alt="TenSaaS" style="width:100%;height:100%;object-fit:contain">
       </div>
       <div>
         <div class="brand-name">TenSaaS</div>
@@ -583,11 +615,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
       Vista general
     </a>
-    <a href="/portainer/" target="_blank" class="nav-item">
+    <a href="https://portainer.tensaas.es" target="_blank" class="nav-item">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-7 0V4"/></svg>
       Portainer
     </a>
-    <a href="/grafana/" target="_blank" class="nav-item">
+    <a href="https://grafana.tensaas.es" target="_blank" class="nav-item">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       Grafana
     </a>
@@ -679,7 +711,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div style="display:flex;align-items:center;gap:.875rem">
       <?php if ($_SESSION['es_admin'] != 1): ?>
         <div class="brand-ico" style="width:30px;height:30px">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          <img src="images/favicon.svg" alt="TenSaaS" style="width:100%;height:100%;object-fit:contain">
         </div>
       <?php endif; ?>
       <h1 class="page-title">Centro de Mando</h1>
@@ -835,7 +867,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
                 $icon = $cdn_map[$sn] ?? $sn;
                 $local = "assets/images/logos/{$sn}.png";
                 $src   = file_exists($local) ? $local : "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/{$icon}.png";
-                
+
                 // Generar URL pública basada en el subdominio (ej: wordpress-btravel.tensaas.es)
                 $co_clean = strtolower($empresa['nombre']);
                 $url      = "https://{$sn}-{$co_clean}.tensaas.es";
@@ -1006,4 +1038,3 @@ document.getElementById('modal-ok').onclick=async()=>{
 </body>
 </html>
 <?php mysqli_close($conn); ?>
-

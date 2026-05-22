@@ -1,11 +1,12 @@
 services:
-  # --- CONECTOR CLOUDFLARE (EL TÚNEL) ---
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared_tunnel
     restart: unless-stopped
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: tunnel --no-autoupdate run
     networks:
       - infra_net
@@ -132,6 +133,7 @@ services:
       - npm_db
     networks:
       - infra_net
+      - infra_proxy_net
 
   npm_db:
     image: "jc21/mariadb-aria:latest"
@@ -185,10 +187,14 @@ services:
     working_dir: /app
     networks:
       - infra_net
+      - infra_proxy_net
     environment:
       - API_TOKEN=${API_TOKEN}
       - PROJECT_ROOT=/app
       - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+      - RESEND_TO_EMAIL=${RESEND_TO_EMAIL}
     # PUERTO CERRADO: Comunicación interna con Dashboard vía infra_net:8000
 
   admin-dashboard:
@@ -230,3 +236,5 @@ networks:
   infra_net:
     driver: bridge
     name: infra_net
+  infra_proxy_net:
+    external: true

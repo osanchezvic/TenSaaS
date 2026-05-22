@@ -42,6 +42,11 @@ access_control:
     - domain: "auth.tensaas.es"
       policy: bypass
 
+    # Bypass para acciones públicas
+    - domain: "panel.tensaas.es"
+      resources: ["^/index.php\\?action=contact$"]
+      policy: bypass
+
     # REGLA MAESTRA PARA ADMINS: 2FA EN TODOS LOS SITIOS
     - domain: ["panel.tensaas.es", "grafana.tensaas.es", "portainer.tensaas.es", "*.tensaas.es"]
       subject: "group:admins"

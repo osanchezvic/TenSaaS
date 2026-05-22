@@ -1,7 +1,12 @@
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import os
 import logging
+import json
+import yaml
+import re
+import resend
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -9,7 +14,14 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-import re
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Auth configuration
 API_TOKEN = os.getenv("API_TOKEN")
@@ -19,6 +31,7 @@ if not API_TOKEN or API_TOKEN in ["supersecrettoken", "d7f3e8b1a9c4d2e5f6a7b8c9d
     # exit(1)
 
 PROJECT_ROOT = os.getenv("PROJECT_ROOT", "/app")
+USERS_YML_PATH = os.path.join(PROJECT_ROOT, "infra/authelia/config/users.yml")
 
 def validate_input(name: str):
     if not re.match(r"^[a-zA-Z0-9_-]+$", name):
@@ -71,10 +84,38 @@ async def deploy(company: str, service: str, token: str = Header(...)):
         logger.error(f"Excepción durante el despliegue: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-import json
-import yaml
+@app.post("/contact")
+async def contact(request: Request):
+    logger.info("Recibida petición en /contact")
+    try:
+        data = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
 
-USERS_YML_PATH = os.path.join(PROJECT_ROOT, "infra/authelia/config/users.yml")
+    nombre = data.get("nombre")
+    email = data.get("email")
+    mensaje = data.get("mensaje")
+
+    if not nombre or not email or not mensaje:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    
+    params = {
+        "from": os.getenv("RESEND_FROM_EMAIL"),
+        "to": [os.getenv("RESEND_TO_EMAIL")],
+        "subject": f"Nuevo mensaje de contacto: {nombre}",
+        "html": f"<p><strong>Nombre:</strong> {nombre}</p><p><strong>Email:</strong> {email}</p><p><strong>Mensaje:</strong><br>{mensaje}</p>"
+    }
+    
+    try:
+        resend.Emails.send(params)
+        logger.info("Email enviado exitosamente vía Resend")
+    except Exception as e:
+        logger.error(f"Error enviando email: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error enviando el correo")
+
+    return {"status": "success", "message": "Mensaje recibido correctamente"}
 
 @app.post("/auth/sync_user")
 async def sync_user(request: Request, token: str = Header(...)):

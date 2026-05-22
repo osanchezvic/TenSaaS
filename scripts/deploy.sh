@@ -37,9 +37,14 @@ LOG_FILE="$LOG_DIR/${EMPRESA}_${SERVICIO}_$(date +%Y%m%d).log"
 
 procesar_template() {
     local tpl="$1" dest="$2"
-    [ -f "$tpl" ] || return 1
+    
+    if [ ! -f "$tpl" ]; then
+        log_error "Template no encontrado: $(basename "$tpl") en $(dirname "$tpl")"
+        return 1
+    fi
 
-    sed -e "s|{{EMPRESA}}|$EMPRESA|g" \
+    log_debug "Generando $dest desde $tpl"
+    if ! sed -e "s|{{EMPRESA}}|$EMPRESA|g" \
         -e "s|{{SERVICIO}}|$SERVICIO|g" \
         -e "s|{{PUERTO}}|$PUERTO|g" \
         -e "s|{{RUTA_DATOS}}|$DOCKER_DATA_DIR/$EMPRESA|g" \
@@ -50,7 +55,11 @@ procesar_template() {
         -e "s|{{ADMIN_USER}}|$ADMIN_USER|g" \
         -e "s|{{ADMIN_PASSWORD}}|$ADMIN_PASSWORD|g" \
         -e "s|{{JWT_SECRET}}|$JWT_SECRET|g" \
-        "$tpl" > "$dest"
+        "$tpl" > "$dest"; then
+        log_error "No se pudo escribir en $dest (¿problemas de permisos?)"
+        return 1
+    fi
+    return 0
 }
 
 # =====================================================
@@ -169,11 +178,7 @@ CRED_FILE=$(guardar_credenciales "$EMPRESA" "$SERVICIO" "$CREDENCIALES_JSON")
 log_info "Procesando templates..."
 CATALOGO_SERVICIO="$CATALOGO_DIR/$SERVICIO"
 
-if ! procesar_template "$CATALOGO_SERVICIO/docker-compose.tpl" "$COMPOSE_FILE"; then
-    log_error "Template no encontrado: docker-compose.tpl"
-    exit 1
-fi
-
+procesar_template "$CATALOGO_SERVICIO/docker-compose.tpl" "$COMPOSE_FILE" || exit 1
 procesar_template "$CATALOGO_SERVICIO/env.tpl" "$SERVICIO_DIR/.env" || true
 
 # =====================================================
